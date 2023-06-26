@@ -1,0 +1,95 @@
+
+#include <Car_Library.h>
+
+int motor_left_1 = 2;  //왼쪽 뒷바퀴
+int motor_left_2 = 3;
+
+int motor_right_1 = 4;  //오른쪽 뒷바퀴
+int motor_right_2 = 5;
+
+int motor_steer_1 = 6;  // 앞바퀴 조향
+int motor_steer_2 = 7;
+
+int analogPin = A5;  //가변 저항
+
+void setup() {
+  // put your setup code here, to run once:
+  Serial.begin(1000);
+  pinMode(motor_left_1, OUTPUT);
+  pinMode(motor_left_2, OUTPUT);
+  pinMode(motor_right_1, OUTPUT);
+  pinMode(motor_right_2, OUTPUT);
+  pinMode(motor_steer_1, OUTPUT);
+  pinMode(motor_steer_2, OUTPUT);
+  pinMode(LED_BUILTIN, OUTPUT);
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+
+  int val;
+
+// 아래의 코드는 동작을 검증하기 위한 test bench
+//
+//  // 왼쪽 뒷바퀴 앞으로, 뒤로
+//  // Forward
+//  Serial.println("Left Motor Forward");  //forward가 좌회전인듯?
+//  motor_forward(motor_left_1, motor_left_2, 70);
+//  delay(3000);
+//
+//  // Backward
+//  Serial.println("Left Motor Backward");
+//  motor_backward(motor_left_1, motor_left_2, 70);
+//  delay(3000);
+//
+//  // 오른쪽 뒷바퀴 앞으로, 뒤로
+//  //Forward
+//  Serial.println("Right Motor Forward");
+//  motor_forward(motor_right_1, motor_right_2, 70);
+//  delay(3000);
+//
+//  // Backward
+//  Serial.println("Right Motor Backward");
+//  motor_backward(motor_right_1, motor_right_2, 70);
+//  delay(3000);
+
+  
+  //=============================
+  //앞 뒤 바퀴 동시에 제어
+  //=============================
+  //Forward
+//  Serial.println("Motor Forward");
+//  motor_forward(motor_right_1, motor_right_2, 250);
+//  motor_backward(motor_left_1, motor_left_2, 250);
+//  delay(10000);
+
+//  // Backward
+//  Serial.println("Motor Backward");
+//  motor_backward(motor_right_1, motor_right_2, 150);
+//  motor_forward(motor_left_1, motor_left_2, 150);
+//  delay(10000);
+  
+  // Hold
+  //Serial.println("Left Motor Hold");
+  //motor_hold(motorA1, motorA2);
+  //delay(3000);
+
+
+
+  //=============================
+  //조향 제어 + 가변 저항
+  //=============================
+  val = potentiometer_Read(analogPin);  
+  
+  Serial.println("Turn Left");
+  motor_forward(motor_steer_1, motor_steer_2, 70);  //forward가 좌회전
+  delay(5000);
+
+  Serial.println("Turn Right");
+  motor_backward(motor_steer_1, motor_steer_2, 70);  //backward가 우회전
+  delay(5000);
+
+  Serial.println(val);
+
+  analogWrite(LED_BUILTIN, val);
+}
