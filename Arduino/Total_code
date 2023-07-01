@@ -44,6 +44,7 @@ void setup() {
 }
 
 void loop() {
+  stop_ = 0
   //신호등 만났을 때는 멈춰야 됨.
   if(stop_ == 1){  //멈추는 조건. 이거는 
     motor_hold(motorA1, motorA2);
@@ -53,17 +54,20 @@ void loop() {
   //신호등 부분 제외하고 직진은 계속 해야하므로, delay 아주 작게 줘서 계속 뒷바퀴는 움직이도록 한다.
   motor_forward(motor_right_1, motor_right_2, 150);
   motor_backward(motor_left_1, motor_left_2, 150);
-  delay(10);
+  delay(10);  
   
   // 조향 부분. 저항값을 받아와서 조향을 하는 거 같음.
   if(Serial.available()) {
     val = Serial.parseInt();
-
-    if(val >= 0) //여기를 정해진 각도 값으로 해서 조향해야할 듯.
+   
+    // 가변 저항 값에 따라 조향 각도 계산
+    int angle = map(val, 123, 153, -70, 70); //좌우 각도를 계산해서 val 값을 기준으로 mapping 해줌.
+    
+    if(angle >= 0) //여기를 정해진 각도 값으로 해서 조향해야할 듯.
     {
       
     }
-    else if(val <= 0 && val >= 0)
+    else if(angle <= 0 && angle >= 0)
     {
       
     }
@@ -71,6 +75,7 @@ void loop() {
     {
       
     }
+      
   }
 
   motor_backward(motor_steer_1, motor_steer_2, 70);  //우회전
