@@ -150,7 +150,7 @@ def slide_window_search(binary_warped, right_current):
     nonzero = binary_warped.nonzero()  # 선이 있는 부분의 인덱스만 저장
     nonzero_y = np.array(nonzero[0])  # 선이 있는 부분 y의 인덱스 값
     nonzero_x = np.array(nonzero[1])  # 선이 있는 부분 x의 인덱스 값
-    margin = 200
+    margin = 100
     minpix = 50
     left_lane = []
     right_lane = []
@@ -696,7 +696,7 @@ def detect():
                     mid_standard = -70
                 else:
                     current_lane = 'right'
-                    mid_standard = 495
+                    mid_standard = 485
             print("!!!!!!!!!!!!!!!!!!!!현재 차선:", current_lane)
 
             save_mid[0] = save_mid[1]
