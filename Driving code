@@ -765,7 +765,7 @@ def detect():
                 angle = diff*0.1 + cal_exactly(right_saving) * 0.2
                 print("직선---------------")
             else:  #곡선 구간 cal_exactly 가중 증가
-                angle = diff*0.1 + cal_exactly(right_saving) * 0.7
+                angle = diff*0.1 + cal_exactly(right_saving) * 0.6
                 print("곡선~~~~~~~~~~~~~~~~~~~")
             # print("diff: ", diff)
             # print("cal: ", cal_exactly(right_saving))
