@@ -79,6 +79,14 @@ def main():
                     # 선이 끊어짐
                     continue
 
+            # 현재 진행 각도 계산
+            angle = math.atan2(target_y - y, target_x - x)
+            angle = math.degrees(angle)
+            print("현재 진행 각도:", angle)
+
+            # 현재 진행 각도를 시리얼 포트를 통해 전송
+            ser.write(str(angle).encode())  # 전송 형식을 실제 환경에 맞게 수정
+
         # 선 그리기
         for i in range(len(line_points) - 1):
             pygame.draw.line(screen, (255, 255, 255), line_points[i], line_points[i + 1], 2)
