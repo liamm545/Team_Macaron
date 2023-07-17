@@ -111,7 +111,7 @@ def plothistogram(image):
 
 def cal_exactly(array) :
     #중점좌표 구하기
-    xmm = 60.0 / 640
+    xmm = 60.0 / 300
     rm = ((array[-1] * xmm + array[1] * xmm) / 2, 78)
 
     #곡선 기울기
@@ -121,9 +121,10 @@ def cal_exactly(array) :
     ocenter = (-130 / ra + rm[0] , -52)
 
     #조향 기울기
-    vl = 52 / (640 * xmm + 130 / ra - rm[0])
+    vl = 52 / (300 * xmm + 130 / ra - rm[0])
 
     return vl
+
 
 
 def slide_window_search(binary_warped, right_current):
