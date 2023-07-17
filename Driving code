@@ -6,12 +6,12 @@ import numpy as np
 import torch
 import math
 import matplotlib as plt
-import serial #######################
+import serial  #######################
 from sympy import Derivative, symbols
 
 sensitivity = 60
-lower_white = np.array([0,0,255-sensitivity])
-upper_white = np.array([255,sensitivity,255])
+lower_white = np.array([0, 0, 255 - sensitivity])
+upper_white = np.array([255, sensitivity, 255])
 
 # SERIAL
 # arduino_port = 'COM3'
@@ -19,7 +19,7 @@ upper_white = np.array([255,sensitivity,255])
 # comm = ser.init(arduino_port, 9600)
 serial_ = 1
 
-if serial_: #######################
+if serial_:  #######################
     serial_port = 'COM3'
     baud_rate = 9600
     ser = serial.Serial(serial_port, baud_rate)
@@ -33,6 +33,7 @@ from utils.utils import \
     lane_line_mask, plot_one_box, show_seg_result, \
     AverageMeter, \
     LoadImages
+
 
 # right_save = None  # 숫자 수정 필요
 # right_save_lane = [0] * 10
@@ -60,12 +61,13 @@ def make_parser():
     return parser
 
 
-def send_data(steering_angle): #######################
+def send_data(steering_angle):  #######################
     # steering_angle = str(steering_angle)
     # data = "Q" + steering_angle
     # ser.write(data.encode("utf-
     data = str(steering_angle) + '\n'
     ser.write(data.encode())
+
 
 class PID():
     def __init__(self, kp, ki, kd):
@@ -106,25 +108,30 @@ def plothistogram(image):
     midpoint = np.int_(histogram.shape[0] / 2)
     # leftbase = np.argmax(histogram[:midpoint])
     rightbase = np.argmax(histogram[:])
-    print(rightbase)
+    #print(rightbase)
     return rightbase, histogram
 
-def cal_exactly(array) :
-    #중점좌표 구하기
+
+def cal_exactly(array):
+    # 중점좌표 구하기
     xmm = 60.0 / 300
     rm = ((array[-1] * xmm + array[1] * xmm) / 2, 78)
 
-    #곡선 기울기
-    ra = (array[-1] * xmm  - array[1] * xmm) / 156
+    # 곡선 기울기
+    ra = (array[-1] * xmm - array[1] * xmm) / 156
 
-    #원의 중심좌표
-    ocenter = (-130 / ra + rm[0] , -52)
+    # 원의 중심좌표
+    ocenter = (-130 / ra + rm[0], -52)
 
-    #조향 기울기
+    # 조향 기울기
     vl = 52 / (300 * xmm + 130 / ra - rm[0])
 
-    return vl
+    if(vl > 0):
+        vl = -math.atan(vl) * 180 / math.pi
+    else:
+        vl = math.atan(vl) * 180 / math.pi
 
+    return vl
 
 
 def slide_window_search(binary_warped, right_current):
@@ -150,9 +157,9 @@ def slide_window_search(binary_warped, right_current):
     color = [0, 255, 0]
     thickness = 2
     mid = [0] * nwindows
-    dot_save = [0] * nwindows
+    dot_save = [0] * (nwindows-5)  # 차선의 값을 저장해둠.
 
-    for w in range(nwindows):
+    for w in range(nwindows-5):
         win_y_low = binary_warped.shape[0] - (w + 1) * window_height  # window 윗부분
         win_y_high = binary_warped.shape[0] - w * window_height  # window 아랫 부분
         # win_xleft_low = left_current - margin  # 왼쪽 window 왼쪽 위
@@ -164,7 +171,7 @@ def slide_window_search(binary_warped, right_current):
         # good_left = ((nonzero_y >= win_y_low) & (nonzero_y < win_y_high) & (nonzero_x >= win_xleft_low) & (
         #             nonzero_x < win_xleft_high)).nonzero()[0]
         good_right = ((nonzero_y >= win_y_low) & (nonzero_y < win_y_high) & (nonzero_x >= win_xright_low) & (
-                    nonzero_x < win_xright_high)).nonzero()[0]
+                nonzero_x < win_xright_high)).nonzero()[0]
         # left_lane.append(good_left)
         right_lane.append(good_right)
 
@@ -174,7 +181,7 @@ def slide_window_search(binary_warped, right_current):
             right_current = np.int_(np.mean(nonzero_x[good_right]))
         # mid[w] = (right_current + left_current)/2
         cv2.rectangle(out_img, (win_xright_low, win_y_low), (win_xright_high, win_y_high), color, thickness)
-        cv2.line(out_img, (right_current,win_y_high), (right_current,win_y_high), [0,255,255], 5)
+        cv2.line(out_img, (right_current, win_y_high), (right_current, win_y_high), [0, 255, 255], 5)
         dot_save[w] = right_current
 
     # left_lane = np.concatenate(left_lane)  # np.concatenate() -> array를 1차원으로 합침
@@ -187,7 +194,6 @@ def slide_window_search(binary_warped, right_current):
     #
     # left_fit = np.polyfit(lefty, leftx, 2)
     right_fit = np.polyfit(righty, rightx, 2)
-
 
     ploty = np.linspace(0, binary_warped.shape[0] - 1, binary_warped.shape[0])
     # left_fitx = left_fit[0] * ploty ** 2 + left_fit[1] * ploty + left_fit[2]
@@ -209,8 +215,8 @@ def slide_window_search(binary_warped, right_current):
     ret = {'right_fitx': rtx, 'ploty': ploty}
 
     # Define conversions in x and y from pixels space to meters
-    ym_per_pix = 19.1/720  # centimeters per pixel in y dimension
-    xm_per_pix = 32.5/1000  # centimeters per pixel in x dimension
+    ym_per_pix = 19.1 / 720  # centimeters per pixel in y dimension
+    xm_per_pix = 32.5 / 1000  # centimeters per pixel in x dimension
     y_eval = np.max(ploty)
     # Fit new polynomials to x,y in world space
     # left_fit_cr = np.polyfit(ploty * ym_per_pix, left_fitx * xm_per_pix, 2)
@@ -223,15 +229,18 @@ def slide_window_search(binary_warped, right_current):
     # Now our radius of curvature is in meters
     # print(left_curverad, 'm', right_curverad, 'm')
     # print(right_curverad, 'cm')
-    right_curverad = 1/right_curverad    #곡률
+    right_curverad = 1 / right_curverad  # 곡률
     str__ = "curve : %f" % right_curverad
-    out_img = cv2.putText(out_img, str__, (350, 40), cv2.FONT_HERSHEY_PLAIN, 2, [255,0,0], 1, cv2.LINE_AA)  #반지름 표시
+    out_img = cv2.putText(out_img, str__, (350, 40), cv2.FONT_HERSHEY_PLAIN, 2, [255, 0, 0], 1, cv2.LINE_AA)  # 반지름 표시
 
     line_1 = right_fit[0] * ploty * 2 + right_fit[1]
     # print(-np.mean(line_1))
-    line_1 = -np.mean(line_1)   #기울기
-    # print(line_1) 
+    line_1 = -np.mean(line_1)  # 기울기
+    # print(line_1)
     return out_img, right_curverad, line_1, dot_save
+
+
+# dot_save가 차선을 저장하는 리스트.
 
 
 # def non_sliding(binary_warped, left_fit, right_fit):
@@ -540,6 +549,13 @@ def detect():
     waste_time = AverageMeter()
     nms_time = AverageMeter()
 
+    save_mid = [None, None]
+
+    lane_changed = False
+    lane_list = ['Normal', '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!']
+    current_lane = 'right'
+    mid_standard = 511
+
     # Load model
     stride = 32
     model = torch.jit.load(weights)
@@ -563,7 +579,6 @@ def detect():
         img = torch.from_numpy(img).to(device)
         img = img.half() if half else img.float()  # uint8 to fp16/32
         img /= 255.0  # 0 - 255 to 0.0 - 1.0
-
 
         if img.ndimension() == 3:
             img = img.unsqueeze(0)
@@ -622,20 +637,20 @@ def detect():
             # Print time (inference)
             print(f'{s}Done. ({t2 - t1:.3f}s)')
 
-            source1 = np.float32([[300, 400], [200, 670], [900, 400], [1180, 670]])
-            destination1 = np.float32([[0, 0], [0, 270], [1280, 0], [1280, 270]])
+            source1 = np.float32([[350, 400], [200, 670], [900, 400], [1180, 670]])
+            destination1 = np.float32([[0, 0], [0, 780], [600, 0], [600, 780]])
 
             ll_white = ll_white.astype(np.uint8).reshape(720, 1280, 1)
-            list = ll_seg_mask.astype(np.uint8).reshape(720, 1280, 1)*255
+            list = ll_seg_mask.astype(np.uint8).reshape(720, 1280, 1) * 255
             merge_list = cv2.bitwise_and(list, list)
 
             # list = np.concatenate((list*255,list*255,list*255),axis=2)
             minverse = cv2.getPerspectiveTransform(destination1, source1)
             transform_matrix = cv2.getPerspectiveTransform(source1, destination1)
 
-            merge_list = cv2.warpPerspective(merge_list, transform_matrix, (1280, 270)) ##조도에 따라서 sensetive 변하는 함수 구현하기
-            #kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 1))
-            #Eroded = cv2.erode(merge_list, kernel, 10)
+            merge_list = cv2.warpPerspective(merge_list, transform_matrix, (600, 780))  ##조도에 따라서 sensetive 변하는 함수 구현하기
+            # kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 1))
+            # Eroded = cv2.erode(merge_list, kernel, 10)
             # thresh = cv2.cvtColor(list, cv2.COLOR_BGR2GRAY)
 
             # 소벨 필터
@@ -650,67 +665,59 @@ def detect():
 
             # 선 분포도 조사 histogram
             rightbase, hist = plothistogram(sobelx)
-            #rightbase, hist = plothistogram(Eroded)
+            # rightbase, hist = plothistogram(Eroded)
             # plt.plot(hist)
             # plt.show()
 
             # list1, mid, left_angle, right_angle, right_save = slide_window_search(merge_list, leftbase, rightbase)
             list1, right_cur, slope, right_saving = slide_window_search(sobelx, rightbase)
-            #list1, right_cur, slope, right_saving = slide_window_search(Eroded, rightbase)
+            # list1, right_cur, slope, right_saving = slide_window_search(Eroded, rightbase)
             mid_custom = np.mean(right_saving)
+            # print("차선값:",mid_custom)
+            if save_mid[0] is None:
+                save_mid[0] = mid_custom  #초기에 전의 mid_custom값 저장
+                save_mid[1] = mid_custom
+            else:
+                save_mid[1] = mid_custom  #현재값 save_mid[1]에 저장
+            #print(mid_custom)
+            # mid_custom이 갑자기 많이 바뀌면 우측 차선 -> 좌측 차선이라고 판단.
+            # print(mid_custom)
+            # print("1: %f" %save_mid[0])
+            # print("2: %f" %save_mid[1])
+            if abs(save_mid[1] - save_mid[0]) > 300:  # 이전 중앙값과 현재 중앙값 차이가 200보다 클 때 -> 인지하는 차선이 바뀜
+                lane_changed = True
+            else:
+                lane_changed = False
+
+            if lane_changed is True:
+                # current_lane 값을 바꿔줌
+                if current_lane == 'right':
+                    current_lane = 'left'
+                    mid_standard = -70
+                else:
+                    current_lane = 'right'
+                    mid_standard = 495
+            print("!!!!!!!!!!!!!!!!!!!!현재 차선:", current_lane)
+
+            save_mid[0] = save_mid[1]
+
             # print("hihi %d"%np.mean(right_saving))
             # result, newwarp, color_warp, pts_left_list, pts_right_list, mean_mid, mean_curve = draw_lane_lines(im0s, thresh, minverse, draw_info)
-            # show_seg_result(im0s, (ll_seg_mask), is_demo=True) ##############################바꿈
-            #cv2.circle(merge_list, (int(mid), 360), 20, (0, 255, 0), -1)
+            show_seg_result(im0s, (ll_seg_mask), is_demo=True) ##############################바꿈
+            # cv2.circle(merge_list, (int(mid), 360), 20, (0, 255, 0), -1)
             # mid = np.mean(mid)
             # print(mid)
             # cv2.imshow('Image', merge_list)
             # print(ret)
 
+
+
+
             cv2.imshow('i', list1)
+            #cv2.imshow('origin', im0s
             # cv2.imshow('ddd', sobelx)
             cv2.waitKey(1)
 
-
-
-
-            # Save results (image with detections)
-            if 0:
-                if dataset.mode == 'image':
-                    cv2.imwrite(save_path, im0)
-                    print(f" The image with the result is saved in: {save_path}")
-                else:  # 'video' or 'stream'
-                    if vid_path != save_path:  # new video
-                        vid_path = save_path
-                        if isinstance(vid_writer, cv2.VideoWriter):
-                            vid_writer.release()  # release previous video writer
-                        if vid_cap:  # video
-                            fps = vid_cap.get(cv2.CAP_PROP_FPS)
-                            # w = int(vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-                            # h = int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-                            w, h = im0.shape[1], im0.shape[0]
-                        else:  # stream
-                            fps, w, h = 30, im0.shape[1], im0.shape[0]
-                            save_path += '.mp4'
-                        vid_writer = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
-                    # vid_writer.write(list)
-                ##################################################################################################################
-                mm1 = MovingAverage(50)  # 윈도우 크기가 50인 이동 평균 객체 생성
-
-                pid = PID(0.5, 0.0003, 0.6)  # 특정 계수를 가진 PID 컨트롤러 생성
-
-                error_curve = (mean_curve - 0)  # 평균 곡선과 0 사이의 오차 계산
-                angle_curve = pid.pid_control(error_curve)  # PID를 사용하여 곡선 오차의 제어 출력 계산
-
-                error_mid = (mean_mid - 640)  # 평균 중간값과 320 사이의 오차 계산
-                angle_mid = pid.pid_control(error_mid)  # PID를 사용하여 중간값 오차의 제어 출력 계산
-
-                mm1.add_sample(angle_mid)  # angle_mid 값을 이동 평균 객체에 추가
-                angle = mm1.get_weightmove()  # angle_mid 값들의 가중 평균 구하기
-                angle = angle_mid * 0.4 + angle * 0.3
-            # print(angle)
-            # print("\n")
-            # c = angle
             pid = PID(0.5, 0.015, 0.05)  # 특정 계수를 가진 PID 컨트롤러 생성
             #
             # divv = 0.5
@@ -724,18 +731,18 @@ def detect():
             # if(right_save[0]  - right_save[-1] < 0):
             #     R_RAD = -R_RAD
             #
-            if right_cur < 0.006:  #차선이 직선일 경우, slope와 중간값 차이 가중치 증가
-                right_cur = 0
-                angle = slope * 30
-                # print(angle)
-                angle = pid.pid_control(angle)
-                print("!!!!!!!!!!직선")
-            else:
-                angle = right_cur * slope * 700
-                # print(angle)
-                angle = pid.pid_control(angle)
-                print("@@@@@@@@@@@@곡선")
-            print("angle : %f" %angle)
+            # if right_cur < 0.006:  # 차선이 직선일 경우, slope와 중간값 차이 가중치 증가
+            #     right_cur = 0
+            #     angle = slope * 30
+            #     # print(angle)
+            #     angle = pid.pid_control(angle)
+            #     # print("!!!!!!!!!!직선")
+            # else:
+            #     angle = right_cur * slope * 700
+            #     # print(angle)
+            #     angle = pid.pid_control(angle)
+            #     # print("@@@@@@@@@@@@곡선")
+
             #
             #
             # left_angle = int(np.mean(left_angle)) - 90
@@ -745,20 +752,31 @@ def detect():
             # rightangle = pid.pid_control(right_angle)
 
             # print(mid)
-            error_mid = (mid_custom - 993)
+            error_mid = (save_mid[1] - mid_standard)
             diff = pid.pid_control(error_mid)  # PID를 사용하여 중간값 오차의 제어 출력 계산
-            diff = diff * 0.
-            print(mid_custom)
-            print(diff)
-            # print("diff: ", diff, "left:", leftangle, "right:", rightangle, "rrad: ", R_RAD)
-            # # angle = R_RAD / 6
-            #angle = diff + angle
-            angle = cal_exactly(right_saving) * 90 + diff
 
-            print("newan :", angle)
+            # print(diff)
+            # print(iff: ", diff, "left:", leftangle, "right:", rightangle, "rrad: ", R_RAD)
+            # # angle = R_RAD / 6
+            # angle = diff + angle
+            # angle = cal_exactly(right_saving) * 8 + diff
+            # #
+            if abs(cal_exactly(right_saving)) < 3:  #직선구간
+                angle = diff*0.1 + cal_exactly(right_saving) * 0.2
+                print("직선---------------")
+            else:  #곡선 구간 cal_exactly 가중 증가
+                angle = diff*0.1 + cal_exactly(right_saving) * 0.7
+                print("곡선~~~~~~~~~~~~~~~~~~~")
+            # print("diff: ", diff)
+            # print("cal: ", cal_exactly(right_saving))
+            # print(cal_exactly(right_saving))
+
+            # print("newan :", angle)
             #
             # # Here is for the serial
             # print("before angle: ", angle)
+            # angle = angle*1.8 + diff
+            print("angle : %f" % angle)
             global serial_
             if serial_:
                 if (angle > 16):
@@ -769,18 +787,15 @@ def detect():
                     angle = angle
 
                 if (angle < 1 and angle > -1):
-                    angle = 0.0
-                print("Helllo!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                    angle = 0
+                # print("Helllo!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
                 speed = 50
                 # print(angle)
                 send_data(angle)
-                if ser.in_waiting:
-                    val = ser.readline().decode()
-
-                    income = int(val)
-                    print("val :", income)
-
-
+                # if ser.in_waiting:
+                #     val = ser.readline().decode()
+                #     income = int(val)
+                #     print("val :", income)
 
             # bytes를 전송
             # comm.write(bytes_data)
