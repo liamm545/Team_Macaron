@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import math
 
 # 이미지파일을 컬러로 읽어온다.
-cap = cv2.VideoCapture('/Users/jeong-inhyuk/Hyuk/vscode/Team_Macaron/video/KakaoTalk_Video_2023-07-16-01-08-06.mp4')
+cap = cv2.VideoCapture('/Users/jeong-inhyuk/Hyuk/vscode/Team_Macaron/video/traffic.mp4')
 data = []
 
 def color_filter(image):
@@ -65,7 +65,7 @@ while True:
 
     blurred_img = cv2.GaussianBlur(warpped_img, (0,0), 2)
 
-    roi2 = blurred_img[620:720, 250:1150]
+    roi2 = blurred_img[600:720, 250:1150]
 
     w_f_img = color_filter(roi2)
 
@@ -75,28 +75,9 @@ while True:
 
     canny_img = cv2.Canny(thresh, 60, 180)
 
-    lines = cv2.HoughLines(canny_img, rho=1, theta = np.pi/180, threshold = 200)
+    lines = cv2.HoughLines(canny_img, rho=1, theta = np.pi/180, threshold = 100)
         
         # Hough line detection 후 lines이 발견되면 thresh에 추출된 직선 그리기
-
-    if lines is not None:
-        
-        for line in lines:
-            # Extract line parameters
-            rho, theta = line[0]
-            a = np.cos(theta)
-            b = np.sin(theta)
-            x0 = a * rho
-            y0 = b * rho
-            x1 = int(x0 + 1000 * (-b))
-            y1 = int(y0 + 1000 * (a))
-            x2 = int(x0 - 1000 * (-b))
-            y2 = int(y0 - 1000 * (a))
-
-            if (a * 180 / math.pi > -5 or a * 180 / math.pi < 5) and total_one_sum > 20000:
-                print("stop");
-
-            cv2.line(thresh, (x1, y1), (x2, y2), (255, 0, 0), 5)
 
     height,width = img.shape[:2]
 
@@ -120,17 +101,41 @@ while True:
     img_result = cv2.bitwise_and(img, img, mask = maskr + maskg)
     img_result = cv2.erode(img_result, None, iterations=5)
     img_result = cv2.dilate(img_result, None, iterations=5)
-    roi = img_result[0:100, 310:690]
+    roi = img_result[0:150, 100:800]
 
     h, s, v = cv2.split(roi)
     total_sum = int(np.sum(h)/h.size)
     result = np.where(h != 0, 1, 0)
     total_one_sum = np.sum(result)
+    a = 100
+    if lines is not None:
+        
+        for line in lines:
+            # Extract line parameters
+            rho, theta = line[0]
+            a = np.cos(theta)
+            b = np.sin(theta)
+            x0 = a * rho
+            y0 = b * rho
+            x1 = int(x0 + 1000 * (-b))
+            y1 = int(y0 + 1000 * (a))
+            x2 = int(x0 - 1000 * (-b))
+            y2 = int(y0 - 1000 * (a))
+            cv2.line(thresh, (x1, y1), (x2, y2), (255, 0, 0), 5)
 
+            # print(total_one_sum)
+    # print(a)
+    if (a * 180 / math.pi > -2 and a * 180 / math.pi < 2) and total_one_sum > 9000:
+        # print(a*180/math.pi)
+        print("stop");
+
+            
     data = add_sample(total_sum)
     
     if len(data) == 2:
-        if abs(data[0] - data[1]) > 40:
+        # print("data[0]: ", data[0], "data[1]: ", data[1])
+        # print("total_one_sum: ", total_one_sum)
+        if abs(data[0] - data[1]) > 30:
             print("start")
 
     cv2.imshow('lane', thresh)
