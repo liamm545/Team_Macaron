@@ -904,9 +904,9 @@ def detect():
                     y2 = int(y0 - 1000 * (a))
 
                     cv2.line(thresh, (x1, y1), (x2, y2), (255, 0, 0), 5)
-            if (a * 180 / math.pi > -5 or a * 180 / math.pi < 5) and total_one_sum > 20000: #stop
+            if (a * 180 / math.pi > -5 or a * 180 / math.pi < 5) and total_one_sum > 9000: #stop
                 if len(data) == 2: #start
-                    if abs(data[0] - data[1]) > 40:
+                    if abs(data[0] - data[1]) > 30:
                         angle = angle
                     else:
                         angle = angle + 50
