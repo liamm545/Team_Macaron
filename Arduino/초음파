@@ -1,40 +1,48 @@
 #include <Car_Library.h>
 
-// Define the number of sensors
-#define NUM_SENSORS 6
+#define NUM_SENSORS 6  // Define the number of sensors
 
-// Define the pins for each sensor
-int trigPins[NUM_SENSORS] = {50, 48, 46, 44, 34, 32};  //정면, 우측 정면, 우측 옆면, 후면, 좌측 옆면, 좌측 정면
-int echoPins[NUM_SENSORS] = {51, 49, 47, 45 ,35, 33};  //정면, 우측 정면, 우측 옆면, 후면, 좌측 옆면, 좌측 정면
+// 초음파 pin
+//int trigPins[NUM_SENSORS] = {50, 48, 46, 44, 34, 32};  //정면, 우측 정면, 우측 옆면, 후면, 좌측 옆면, 좌측 정면
+//int echoPins[NUM_SENSORS] = {51, 49, 47, 45 ,35, 33};  //정면, 우측 정면, 우측 옆면, 후면, 좌측 옆면, 좌측 정면
+
+int trigPins = 50; //정면만
+int echoPins = 51;
+
+int motor_left_1 = 2;  //왼쪽 뒷바퀴
+int motor_left_2 = 3;
+
+int motor_right_1 = 4;  //오른쪽 뒷바퀴
+int motor_right_2 = 5;
+
+int motor_steer_1 = 6;  // 앞바퀴 조향
+int motor_steer_2 = 7;
+
+int analogPin = A5;  //가변 저항
 
 // Define name of the pins
-const char* Strings[NUM_SENSORS] = {"정면", "우측 정면", "우측 옆면", "후면", "좌측 옆면", "좌측 정면"};
+const char* Strings = "정면";
 
-
-long distances[NUM_SENSORS];
+long distances;
 
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
-  
-  for (int i = 0; i < NUM_SENSORS; i++) {
-    pinMode(trigPins[i], OUTPUT);
-    pinMode(echoPins[i], INPUT);
-  }
+  Serial.setTimeout(50);
+  pinMode(trigPins, OUTPUT);
+  pinMode(echoPins, INPUT);
+
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
-  for (int i = 0; i < NUM_SENSORS; i++) {
-    distances[i] = ultrasonic_distance(trigPins[i], echoPins[i]);
-    
-    Serial.print("Sensor ");
-    //Serial.print(i + 1);
-    Serial.print(Strings[i]);
-    Serial.print(": ");
-    Serial.print(distances[i]);
-    Serial.println(" mm");
-  }
+  distances = ultrasonic_distance(trigPins, echoPins);
+  
+  Serial.print("Sensor ");
+  Serial.print(Strings);
+  Serial.print(": ");
+  Serial.print(distances);
+  Serial.println(" mm");
 
-  delay(1000);
+  delay(100);
 }
