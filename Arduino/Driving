@@ -1,0 +1,79 @@
+#include <Car_Library.h>
+
+int val;  // 수신될 가변 저항 값 저장할 변수
+int angle;
+int bangle;
+int speed;
+char rr;
+
+int motor_left_1 = 2;  //왼쪽 뒷바퀴
+int motor_left_2 = 3;
+
+int motor_right_1 = 4;  //오른쪽 뒷바퀴
+int motor_right_2 = 5;
+
+int motor_steer_1 = 6;  // 앞바퀴 조향
+int motor_steer_2 = 7;
+
+int analogPin = A5;  //가변 저항
+
+void setup() {
+  // put your setup code here, to run once:
+  Serial.begin(9600);
+  Serial.setTimeout(50);
+  angle = 0;
+
+  pinMode(motor_left_1, OUTPUT);
+  pinMode(motor_left_2, OUTPUT);
+  pinMode(motor_right_1, OUTPUT);
+  pinMode(motor_right_2, OUTPUT);
+  pinMode(motor_steer_1, OUTPUT);
+  pinMode(motor_steer_2, OUTPUT);
+}
+// 고속주행코드!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+void loop() {
+  val = potentiometer_Read(analogPin); 
+  
+  speed = 254;
+  
+  if (Serial.available()){
+    
+
+    if(angle > 16 || angle < -16){
+      angle = bangle;
+    }else{
+      bangle = angle;
+    }
+    
+    int angle_1 = map(angle, -16, 16, 157, 131);
+    
+    if(speed == 0){  //멈추는 조건. 이거는 
+      motor_hold(motor_right_1, motor_right_2);
+      motor_hold(motor_left_1, motor_left_2);
+      delay(300);  //몇 초 멈춰야 하는지.
+    }
+    
+    else{
+          motor_forward(motor_right_1, motor_right_2, speed);
+          motor_backward(motor_left_1, motor_left_2, speed);
+    }
+
+    if(val <= angle_1)
+    {
+      motor_forward(motor_steer_1, motor_steer_2, 80);  //좌회전
+      if (val >= angle_1){
+        motor_hold(motor_steer_1, motor_steer_2);
+      }
+    }
+    else if(val >= angle_1)  //
+    {
+      motor_backward(motor_steer_1, motor_steer_2, 80); //우회전
+      if (val <= angle_1){
+        motor_hold(motor_steer_1, motor_steer_2);
+      }    
+    }  
+    angle = Serial.parseInt();
+    Serial.println(angle);
+    delay(10);
+  }
+}
