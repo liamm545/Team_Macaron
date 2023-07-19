@@ -114,17 +114,18 @@ def plothistogram(image):
 
 def cal_exactly(array):
     # 중점좌표 구하기
-    xmm = 60.0 / 300
-    rm = ((array[-1] * xmm + array[1] * xmm) / 2, 78)
+    xmm = 90.0 / 600
+    ymm = 98.0 / 780
+    rm = ((array[-1] * xmm + array[1] * xmm) / 2, 780*ymm/2)
 
     # 곡선 기울기
-    ra = (array[-1] * xmm - array[1] * xmm) / 156
+    ra = (array[-1] * xmm - array[1] * xmm) / 98
 
     # 원의 중심좌표
-    ocenter = (-130 / ra + rm[0], -52)
+    ocenter = (-102.5 / ra + rm[0], -53.5)
 
     # 조향 기울기
-    vl = 52 / (300 * xmm + 130 / ra - rm[0])
+    vl = 53.5 / (300 * xmm + 102.5 / ra - rm[0])
 
     if(vl > 0):
         vl = -math.atan(vl) * 180 / math.pi
@@ -150,16 +151,16 @@ def slide_window_search(binary_warped, right_current):
     nonzero = binary_warped.nonzero()  # 선이 있는 부분의 인덱스만 저장
     nonzero_y = np.array(nonzero[0])  # 선이 있는 부분 y의 인덱스 값
     nonzero_x = np.array(nonzero[1])  # 선이 있는 부분 x의 인덱스 값
-    margin = 200
+    margin = 80
     minpix = 50
     left_lane = []
     right_lane = []
     color = [0, 255, 0]
     thickness = 2
     mid = [0] * nwindows
-    dot_save = [0] * (nwindows-5)  # 차선의 값을 저장해둠.
+    dot_save = [0] * (nwindows-4)  # 차선의 값을 저장해둠.
 
-    for w in range(nwindows-5):
+    for w in range(nwindows-4):
         win_y_low = binary_warped.shape[0] - (w + 1) * window_height  # window 윗부분
         win_y_high = binary_warped.shape[0] - w * window_height  # window 아랫 부분
         # win_xleft_low = left_current - margin  # 왼쪽 window 왼쪽 위
@@ -554,7 +555,7 @@ def detect():
     lane_changed = False
     lane_list = ['Normal', '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!']
     current_lane = 'right'
-    mid_standard = 511
+    mid_standard = 544
 
     # Load model
     stride = 32
@@ -673,13 +674,13 @@ def detect():
             list1, right_cur, slope, right_saving = slide_window_search(sobelx, rightbase)
             # list1, right_cur, slope, right_saving = slide_window_search(Eroded, rightbase)
             mid_custom = np.mean(right_saving)
-            # print("차선값:",mid_custom)
+            print("차선값:",mid_custom)
             if save_mid[0] is None:
                 save_mid[0] = mid_custom  #초기에 전의 mid_custom값 저장
                 save_mid[1] = mid_custom
             else:
                 save_mid[1] = mid_custom  #현재값 save_mid[1]에 저장
-            #print(mid_custom)
+            # print(mid_custom)
             # mid_custom이 갑자기 많이 바뀌면 우측 차선 -> 좌측 차선이라고 판단.
             # print(mid_custom)
             # print("1: %f" %save_mid[0])
@@ -693,17 +694,17 @@ def detect():
                 # current_lane 값을 바꿔줌
                 if current_lane == 'right':
                     current_lane = 'left'
-                    mid_standard = -70
+                    mid_standard = -22  #-39 ~
                 else:
                     current_lane = 'right'
-                    mid_standard = 495
+                    mid_standard = 544
             print("!!!!!!!!!!!!!!!!!!!!현재 차선:", current_lane)
 
             save_mid[0] = save_mid[1]
 
             # print("hihi %d"%np.mean(right_saving))
             # result, newwarp, color_warp, pts_left_list, pts_right_list, mean_mid, mean_curve = draw_lane_lines(im0s, thresh, minverse, draw_info)
-            show_seg_result(im0s, (ll_seg_mask), is_demo=True) ##############################바꿈
+            # show_seg_result(im0s, (ll_seg_mask), is_demo=True) ##############################바꿈
             # cv2.circle(merge_list, (int(mid), 360), 20, (0, 255, 0), -1)
             # mid = np.mean(mid)
             # print(mid)
@@ -718,7 +719,7 @@ def detect():
             # cv2.imshow('ddd', sobelx)
             cv2.waitKey(1)
 
-            pid = PID(0.5, 0.015, 0.05)  # 특정 계수를 가진 PID 컨트롤러 생성
+            pid = PID(0.5, 0.003, 0.03)  # 특정 계수를 가진 PID 컨트롤러 생성
             #
             # divv = 0.5
             #
@@ -762,10 +763,10 @@ def detect():
             # angle = cal_exactly(right_saving) * 8 + diff
             # #
             if abs(cal_exactly(right_saving)) < 3:  #직선구간
-                angle = diff*0.1 + cal_exactly(right_saving) * 0.2
+                angle = diff*0.2 + cal_exactly(right_saving) * 0.2
                 print("직선---------------")
             else:  #곡선 구간 cal_exactly 가중 증가
-                angle = diff*0.1 + cal_exactly(right_saving) * 0.7
+                angle = diff*0.07 + cal_exactly(right_saving) * 0.4
                 print("곡선~~~~~~~~~~~~~~~~~~~")
             # print("diff: ", diff)
             # print("cal: ", cal_exactly(right_saving))
