@@ -33,22 +33,28 @@ void setup() {
 // 고속주행코드!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 void loop() {
   val = potentiometer_Read(analogPin); 
-  
   speed = 100;
   
   if (Serial.available()){
-    
-    int angle_1 = map(angle, -16, 16, 157, 131);
-    
-    if(angle > 50){  //멈추는 조건. 이거는 
+    angle = Serial.parseInt();
+    if(angle >200000){
       motor_hold(motor_right_1, motor_right_2);
       motor_hold(motor_left_1, motor_left_2);
-
     }
     else{
-          motor_forward(motor_right_1, motor_right_2, speed);
-          motor_backward(motor_left_1, motor_left_2, speed);
+    
+    if(angle > 16 || angle < -16){
+      angle = bangle;
+    }else{
+      bangle = angle;
     }
+    int angle_1 = map(angle, -16, 17, 150, 121);
+    
+    
+
+    motor_forward(motor_right_1, motor_right_2, speed);
+    motor_backward(motor_left_1, motor_left_2, speed);
+    
 
     if(val <= angle_1)
     {
@@ -59,14 +65,15 @@ void loop() {
     }
     else if(val >= angle_1)  //
     {
-      motor_backward(motor_steer_1, motor_steer_2, 80); //우회전
+      motor_backward(motor_steer_1, motor_steer_2, 140); //우회전
       if (val <= angle_1){
         motor_hold(motor_steer_1, motor_steer_2);
       }    
     }
 
-    angle = Serial.parseInt();
-    Serial.println(angle);
+    
+    
     delay(10);
+  }
   }
 }
