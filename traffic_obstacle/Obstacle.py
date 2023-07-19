@@ -17,6 +17,7 @@ upper_white = np.array([255, sensitivity, 255])
 
 # 게임 화면 크기 설정
 WIDTH, HEIGHT = 800, 600
+game_once = 0;
 
 # 시리얼 통신 설정
 serial_ = 1
@@ -247,9 +248,11 @@ def detect():
     save_mid = [None, None]
 
     current_lane = 'right'
-    mid_standard = 511
+    mid_standard = 485
 
     max_area = 0
+
+    global game_once
 
     # Load model
     stride = 32
@@ -315,19 +318,21 @@ def detect():
                 for *xyxy, conf, cls in reversed(det):
                     area = plot_one_box(xyxy, im0, line_thickness=3)
                     max_area = max(max_area, area)
-            if max_area > 150000:
-                print("Hello")
-                pygame.init()
+                print(max_area)
+            if max_area > 85000 and game_once == 0:
+                game_once = 1
+                # pygame.init()
                 screen = pygame.display.set_mode((WIDTH, HEIGHT))
                 screen.fill((0, 0, 0))
-                pygame.display.set_caption("장애물 피하기")
+                # pygame.display.set_caption("회피에 미친놈")
                 clock = pygame.time.Clock()
 
                 # 선 좌표
+                line_points = []
                 direction_points = []
 
                 # 멥 불러오자.
-                line_points = load_map()
+                line_points, direction_points = load_map()
                 x, y = line_points[0]
 
                 running = True
@@ -338,68 +343,72 @@ def detect():
 
                 prev_angle = []
                 last_angle = 0
-                target_x, target_y = line_points[0]
-                dirct = direction_points[0]
-                dx = target_x - x
-                dy = target_y - y
-                distance = math.hypot(dx, dy)
+
 
                 while running:
+                    if len(line_points) > 1:
 
-                    if distance > 0:
-                        speed = 0.7  # 이동 속도 설정
-                        steps = min(speed, distance)  # 이동 거리 제한
-                        angle = math.atan2(dy, dx)
-                        x += math.cos(angle) * steps
-                        y += math.sin(angle) * steps
+                        target_x, target_y = line_points[0]
+                        dirct = direction_points[0]
+                        dx = target_x - x
+                        dy = target_y - y
+                        distance = math.hypot(dx, dy)
 
-                    # 다음 점에 도착했는지 확인
-                    if abs(x - target_x) < 1 and abs(y - target_y) < 1:
-                        line_points.pop(0)  # 도착한 점 삭제
-                        direction_points.pop(0)
-                        screen.fill((0, 0, 0))
-                        pygame.draw.lines(screen, (255, 255, 255), False, line_points, 1)
-                        if len(line_points) < 2:
-                            # 선이 부족하여 계속 진행할 수 없음
-                            follow_mode = False
-                            continue
-                        if (direction_points[1] == 0):
-                            send_data(90)
-                            time.sleep(5)
-                            direction_points.pop(1)
+                        if distance > 0:
+                            speed = 0.7  # 이동 속도 설정
+                            steps = min(speed, distance)  # 이동 거리 제한
+                            angle = math.atan2(dy, dx)
+                            x += math.cos(angle) * steps
+                            y += math.sin(angle) * steps
 
-                    # 현재 진행 각도 계산
-                    angle = math.atan2(target_y - y, target_x - x)
-                    angle = math.degrees(angle)
-                    prev_angle.append(angle)
-                    if len(prev_angle) > 5:
-                        prev_angle.pop(0)
-                    angle = max(prev_angle)
-                    use_angle = angle - last_angle
+                        # 다음 점에 도착했는지 확인
+                        if abs(x - target_x) < 1 and abs(y - target_y) < 1:
+                            line_points.pop(0)  # 도착한 점 삭제
+                            direction_points.pop(0)
+                            screen.fill((0, 0, 0))
+                            # pygame.draw.lines(screen, (255, 255, 255), False, line_points, 1)
+                            if len(line_points) < 2:
+                                # 선이 부족하여 계속 진행할 수 없음
+                                follow_mode = False
+                                continue
+                            if (direction_points[1] == 0):
+                                send_data(90)
+                                time.sleep(5)
+                                direction_points.pop(1)
 
-                    last_angle = angle
-                    # 현재 진행 각도를 시리얼 포트를 통해 전송
+                        # 현재 진행 각도 계산
+                        angle = math.atan2(target_y - y, target_x - x)
+                        angle = math.degrees(angle)
+                        prev_angle.append(angle)
+                        if len(prev_angle) > 5:
+                            prev_angle.pop(0)
+                        angle = max(prev_angle)
+                        use_angle = angle - last_angle
 
-                    if (angle > 16):
-                        angle = 16
-                    elif (angle < -16):
-                        angle = -16
-                    else:
-                        angle = angle
+                        last_angle = angle
+                        # 현재 진행 각도를 시리얼 포트를 통해 전송
 
-                    if (angle < 4 and angle > -4):
-                        angle = 0
-                    # print("Helllo!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-                    if (direction_points[1] == -1):
-                        angle = angle + 40
-                    # print(angle)
-                    send_data(angle)  # 전송 형식을 실제 환경에 맞게 수정
-                    print("현재 진행 각도:", angle)
-                    print("\n진행방향: ", dirct)
+                        if (angle > 16):
+                            angle = 16
+                        elif (angle < -16):
+                            angle = -16
+                        else:
+                            angle = angle
 
-                print("pygame이 끝났씁니다.")
-                ser.close()  # 시리얼 포트 닫기
-                pygame.quit()
+                        if (angle < 4 and angle > -4):
+                            angle = 0
+                        if (direction_points[1] == -1):
+                            angle = angle + 40
+                        send_data(angle)  # 전송 형식을 실제 환경에 맞게 수정
+                        print("현재 진행 각도:", angle)
+                        print("\n진행방향: ", dirct)
+
+                    # pygame.display.flip()
+                    clock.tick(60)
+
+                print("신호등하자.")
+                # ser.close()  # 시리얼 포트 닫기
+                # pygame.quit()
 
             # Print time (inference)
             print(f'{s}Done. ({t2 - t1:.3f}s)')
@@ -479,10 +488,10 @@ def detect():
             diff = pid.pid_control(error_mid)  # PID를 사용하여 중간값 오차의 제어 출력 계산
 
             if abs(cal_exactly(right_saving)) < 3:  #직선구간
-                angle = diff*0.1 + cal_exactly(right_saving) * 0.2
+                angle = diff*0.1 + cal_exactly(right_saving) * 0.1
                 # print("직선---------------")
-            else:  #곡선 구간 cal_exactly 가중 증가
-                angle = diff*0.1 + cal_exactly(right_saving) * 0.5
+            else:  #곡선 구간 cal_exactly 가중 증가5
+                angle = diff*0.1 + cal_exactly(right_saving) * 0.3
                 # print("곡선~~~~~~~~~~~~~~~~~~~")
             #
             # print("angle : %f" % angle)
@@ -506,174 +515,34 @@ def detect():
     nms_time.update(t4 - t3, img.size(0))
     waste_time.update(tw2 - tw1, img.size(0))
     print('inf : (%.4fs/frame)   nms : (%.4fs/frame)' % (inf_time.avg, nms_time.avg))
-    print(f'Done. ({time.time() - t0:.3f}s)')    # 
-
-# # 파이게임 실행 코드
-# def main():
-#     pygame.init()
-#     screen = pygame.display.set_mode((WIDTH, HEIGHT))
-#     screen.fill((0, 0, 0))
-#     pygame.display.set_caption("장애물 피하기")
-#     clock = pygame.time.Clock()
-#
-#     # 시작 위치
-#     #x, y = WIDTH // 2, HEIGHT // 2
-#
-#     # 선 좌표
-#     line_points = []
-#     direction_points = []
-#
-#     running = True
-#     draw_mode = False
-#     follow_mode = False
-#     break_p = False
-#     now_dir = 1
-#
-#     prev_angle = []
-#     last_angle = 0
-#
-#     while running:
-#         for event in pygame.event.get():
-#             if event.type == QUIT:
-#                 running = False
-#             elif event.type == KEYDOWN:
-#                 if event.key == K_s:
-#                     # 's' 키를 누르면 맵 저장
-#                     save_map(line_points)
-#                 elif event.key == K_l:
-#                     # 'l' 키를 누르면 맵 로드
-#                     line_points = load_map()
-#                     screen.fill((0, 0, 0))
-#                     pygame.draw.lines(screen, (255, 255, 255), False, line_points, 1)
-#                 elif event.key == K_d:
-#                     # 'd' 키를 누르면 그리기 모드 전환
-#                     draw_mode = not draw_mode
-#                     if not draw_mode:
-#                         # 그리기 모드 해제 시 선 좌표 초기화
-#                         line_points = []
-#                         screen.fill((0, 0, 0))
-#                 elif event.key == K_SPACE:
-#                     # 'space' 키를 누르면 따라가기 모드 전환
-#                     follow_mode = not follow_mode
-#                     x, y = line_points[0]
-#                     line_points.pop(0)
-#                 elif event.key == K_c:
-#                     now_dir = - now_dir
-#                 elif event.key == K_q:
-#                     direction_points.append(0)
-#
-#             elif event.type == MOUSEBUTTONDOWN:
-#                 if event.button == 1:
-#                     # 마우스 왼쪽 버튼을 누르면 그리기 모드 활성화
-#                     draw_mode = True
-#
-#             elif event.type == MOUSEBUTTONUP:
-#                 if event.button == 1:
-#                     # 마우스 왼쪽 버튼을 놓으면 그리기 모드 비활성화
-#                     draw_mode = False
-#
-#         if draw_mode:
-#             # 그리기 모드에서는 선을 그림
-#                 line_points.append(pygame.mouse.get_pos())
-#                 line_points.append(pygame.mouse.get_pos())
-#
-#                 if(now_dir == 1):
-#                     pygame.draw.lines(screen, (255, 255, 255), False, line_points, 1)
-#                     line_points.pop()
-#                     direction_points.append(1)
-#                 elif(now_dir == -1):
-#                     pygame.draw.lines(screen, (255, 0, 0), False, line_points, 1)
-#                     line_points.pop()
-#                     direction_points.append(-1)
-#
-#         data = ser.read()  # Read data from Arduino
-#         if data == b'a':
-#             print("Received 'a' signal from Arduino!")
-#
-#             if len(line_points) > 1 and follow_mode:
-#                 # 따라가기 모드일 때 선 따라가기 로직 수행
-#
-#                 target_x, target_y = line_points[0]
-#                 dirct = direction_points[0]
-#                 dx = target_x - x
-#                 dy = target_y - y
-#                 distance = math.hypot(dx, dy)
-#
-#                 if distance > 0:
-#                     speed = 0.7  # 이동 속도 설정
-#                     steps = min(speed, distance)  # 이동 거리 제한
-#                     angle = math.atan2(dy, dx)
-#                     x += math.cos(angle) * steps
-#                     y += math.sin(angle) * steps
-#
-#                 # 다음 점에 도착했는지 확인
-#                 if abs(x - target_x) < 1 and abs(y - target_y) < 1:
-#                     line_points.pop(0)  # 도착한 점 삭제
-#                     direction_points.pop(0)
-#                     screen.fill((0, 0, 0))
-#                     pygame.draw.lines(screen, (255, 255, 255), False, line_points, 1)
-#                     if len(line_points) < 2:
-#                         # 선이 부족하여 계속 진행할 수 없음
-#                         follow_mode = False
-#                         continue
-#                     if (direction_points[1] == 0):
-#                         send_data(90)
-#                         time.sleep(5)
-#                         direction_points.pop(1)
-#
-#                 # 현재 진행 각도 계산
-#                 angle = math.atan2(target_y - y, target_x - x)
-#                 angle = math.degrees(angle)
-#                 prev_angle.append(angle)
-#                 if len(prev_angle) > 5:
-#                     prev_angle.pop(0)
-#                 angle = max(prev_angle)
-#                 use_angle = angle - last_angle
-#
-#                 last_angle = angle
-#                 # 현재 진행 각도를 시리얼 포트를 통해 전송
-#
-#                 if (angle > 16):
-#                     angle = 16
-#                 elif (angle < -16):
-#                     angle = -16
-#                 else:
-#                     angle = angle
-#
-#                 if (angle < 4 and angle > -4):
-#                     angle = 0
-#                 # print("Helllo!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-#                 if (direction_points[1] == -1):
-#                     angle = angle + 40
-#                 # print(angle)
-#                 send_data(angle)  # 전송 형식을 실제 환경에 맞게 수정
-#                 print("현재 진행 각도:", angle)
-#                 print("\n진행방향: ", dirct)
-#
-#             pygame.display.flip()
-#             clock.tick(60)
-#     print("pygame이 끝났씁니다.")
-#     ser.close()  # 시리얼 포트 닫기
-#     pygame.quit()
-#
-#
-# def save_map(line_points):
-#     # 맵을 파일로 저장하는 함수
-#     with open('map_obstacle.txt', 'w') as f:
-#         for point in line_points:
-#             f.write(f"{point[0]},{point[1]}\n")
+    print(f'Done. ({time.time() - t0:.3f}s)')    #
 
 def load_map():
     # 맵 파일을 로드하는 함수
     line_points = []
+    direction_points = []
     try:
-        with open('map.txt', 'r') as f:
+        with open('map_obstacle.txt', 'r') as f:
             for line in f:
                 x, y = line.strip().split(',')
                 line_points.append((int(x), int(y)))
+        with open('map_obstacle_direct.txt', 'r') as f:
+            for line in f:
+                x = line.strip()
+                direction_points.append((int(x)))
     except FileNotFoundError:
         print("맵이 없다.")
-    return line_points
+    return line_points, direction_points
+
+def save_map(line_points, direction_points):
+    # 맵을 파일로 저장하는 함수
+    with open('map_obstacle.txt', 'w') as f:
+        for point in line_points:
+            f.write(f"{point[0]},{point[1]}\n")
+    #맵의 dir을 저장하는 함수
+    with open('map_obstacle_direct.txt', 'w') as f:
+        for point in direction_points:
+            f.write(f"{point}\n")
 
 
 if __name__ == '__main__':
