@@ -906,15 +906,15 @@ def detect():
                     y2 = int(y0 - 1000 * (a))
 
                     cv2.line(thresh, (x1, y1), (x2, y2), (255, 0, 0), 5)
-            print("a: ",a, "total_one_sum: ", total_one_sum, "total_sum: ", total_sum)
-            # if (a * 180 / math.pi > -5 or a * 180 / math.pi < 5) and total_one_sum > 9000:  # stop
-            #     if len(data) == 2:  # start
-            #         if abs(data[0] - data[1]) > 30:
-            #             angle = angle
-            #             print("go!!!")
-            #         else:
-            #             angle += 300000
-            #             print("stop!!!")
+            print("angle: ",a*180/math.pi, "total_one_sum: ", total_one_sum, "total_sum: ", data)
+            if (a * 180 / math.pi > -5 and a * 180 / math.pi < 5) and total_one_sum > 9000:  # stop
+                if len(data) == 2:  # start
+                    if abs(data[0] - data[1]) > 30:
+                        angle = angle
+                        print("go!!!")
+                    else:
+                        angle += 300000
+                        print("stop!!!")
             # print(total_sum, total_one_sum)
 
 

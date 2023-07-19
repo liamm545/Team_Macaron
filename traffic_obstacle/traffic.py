@@ -107,6 +107,7 @@ while True:
     total_sum = int(np.sum(h)/h.size)
     result = np.where(h != 0, 1, 0)
     total_one_sum = np.sum(result)
+    data = add_sample(total_sum)
     a = 100
     if lines is not None:
         
@@ -125,18 +126,18 @@ while True:
 
             # print(total_one_sum)
     # print(a)
-    if (a * 180 / math.pi > -2 and a * 180 / math.pi < 2) and total_one_sum > 9000:
-        # print(a*180/math.pi)
-        print("stop");
+   
+    if (a * 180 / math.pi > -5 and a * 180 / math.pi < 5) and total_one_sum > 9000:  # stop
+        if len(data) == 2:  # start
+            if abs(data[0] - data[1]) > 30:
+                
+                print("go!!!")
+            else:
+                
+                print("stop!!!")
 
-            
-    data = add_sample(total_sum)
+    print("angle: ",a*180/math.pi, "total_one_sum: ", total_one_sum, "total_sum: ", data)        
     
-    if len(data) == 2:
-        # print("data[0]: ", data[0], "data[1]: ", data[1])
-        # print("total_one_sum: ", total_one_sum)
-        if abs(data[0] - data[1]) > 30:
-            print("start")
 
     cv2.imshow('lane', thresh)
     cv2.imshow('detected results', roi)
