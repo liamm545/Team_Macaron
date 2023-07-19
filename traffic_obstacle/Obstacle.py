@@ -20,7 +20,7 @@ WIDTH, HEIGHT = 800, 600
 game_once = 0;
 
 # 시리얼 통신 설정
-serial_ = 1
+serial_ = 0
 
 if serial_:  #######################
     ser = serial.Serial('COM3', 9600)
@@ -102,17 +102,18 @@ def plothistogram(image):
 
 def cal_exactly(array):
     # 중점좌표 구하기
-    xmm = 60.0 / 300
-    rm = ((array[-1] * xmm + array[1] * xmm) / 2, 78)
+    xmm = 90.0 / 600
+    ymm = 98.0 / 780
+    rm = ((array[-1] * xmm + array[1] * xmm) / 2, 780*ymm/2)
 
     # 곡선 기울기
-    ra = (array[-1] * xmm - array[1] * xmm) / 156
+    ra = (array[-1] * xmm - array[1] * xmm) / 98
 
     # 원의 중심좌표
-    ocenter = (-130 / ra + rm[0], -52)
+    ocenter = (-102.5 / ra + rm[0], -53.5)
 
     # 조향 기울기
-    vl = 52 / (300 * xmm + 130 / ra - rm[0])
+    vl = 53.5 / (300 * xmm + 102.5 / ra - rm[0])
 
     if(vl > 0):
         vl = -math.atan(vl) * 180 / math.pi
@@ -248,7 +249,7 @@ def detect():
     save_mid = [None, None]
 
     current_lane = 'right'
-    mid_standard = 485
+    mid_standard = 544
 
     max_area = 0
 
@@ -474,11 +475,11 @@ def detect():
                 # current_lane 값을 바꿔줌
                 if current_lane == 'right':
                     current_lane = 'left'
-                    mid_standard = -65
+                    mid_standard = -39  # -39 ~
                 else:
                     current_lane = 'right'
-                    mid_standard = 485
-            # print("!!!!!!!!!!!!!!!!!!!!현재 차선:", current_lane)
+                    mid_standard = 544
+            # print("!!!!!!!!!!!!!!!!!!!!현재 차선:", current_lane)%
 
             save_mid[0] = save_mid[1]
 
@@ -491,11 +492,11 @@ def detect():
             error_mid = (save_mid[1] - mid_standard)
             diff = pid.pid_control(error_mid)  # PID를 사용하여 중간값 오차의 제어 출력 계산
 
-            if abs(cal_exactly(right_saving)) < 3:  #직선구간
-                angle = diff*0.1 + cal_exactly(right_saving) * 0.1
-                # print("직선---------------")
-            else:  #곡선 구간 cal_exactly 가중 증가5
-                angle = diff*0.1 + cal_exactly(right_saving) * 0.3
+            if abs(cal_exactly(right_saving)) < 3:  # 직선구간
+                angle = diff * 0.2 + cal_exactly(right_saving) * 0.2
+                print("직선---------------")
+            else:  # 곡선 구간 cal_exactly 가중 증가
+                angle = diff * 0.07 + cal_exactly(right_saving) * 0.3
                 # print("곡선~~~~~~~~~~~~~~~~~~~")
             #
             # print("angle : %f" % angle)
