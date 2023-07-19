@@ -340,12 +340,16 @@ def detect():
                 follow_mode = False
                 break_p = False
                 now_dir = 1
-
+                counter = 0
                 prev_angle = []
                 last_angle = 0
 
 
                 while running:
+                    counter = counter + 1
+                    print("counter: ", counter)
+                    if (counter == 1350):
+                        running = False
                     if len(line_points) > 1:
 
                         target_x, target_y = line_points[0]
