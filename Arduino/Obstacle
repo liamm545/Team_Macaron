@@ -34,7 +34,7 @@ void setup() {
 void loop() {
   val = potentiometer_Read(analogPin); 
   
-  speed = 90;
+  speed = 80;
   
   if (Serial.available()){
     
@@ -45,7 +45,7 @@ void loop() {
       bangle = angle;
     }
     
-    int angle_1 = map(angle, -16, 16, 149, 125);
+    int angle_1 = map(angle, -16, 16, 150, 121);
     
     if(speed == 0){  //멈추는 조건. 이거는 
       motor_hold(motor_right_1, motor_right_2);
@@ -60,14 +60,14 @@ void loop() {
 
     if(val <= angle_1)
     {
-      motor_forward(motor_steer_1, motor_steer_2, 80);  //좌회전
+      motor_forward(motor_steer_1, motor_steer_2, 140);  //좌회전
       if (val >= angle_1){
         motor_hold(motor_steer_1, motor_steer_2);
       }
     }
     else if(val >= angle_1)  //
     {
-      motor_backward(motor_steer_1, motor_steer_2, 80); //우회전
+      motor_backward(motor_steer_1, motor_steer_2, 140); //우회전
       if (val <= angle_1){
         motor_hold(motor_steer_1, motor_steer_2);
       }    
