@@ -114,6 +114,7 @@ def add_sample(new_sample):
         data = data[1:] + [new_sample]
     return data
 
+
 def send_data(steering_angle):  #######################
     # steering_angle = str(steering_angle)
     # data = "Q" + steering_angle
@@ -163,23 +164,24 @@ def plothistogram(image):
     midpoint = np.int_(histogram.shape[0] / 2)
     # leftbase = np.argmax(histogram[:midpoint])
     rightbase = np.argmax(histogram[:])
-    #print(rightbase)
+    # print(rightbase)
     return rightbase, histogram
 
 
 def cal_exactly(array):
     # 중점좌표 구하기
-    xmm = 60.0 / 300
-    rm = ((array[-1] * xmm + array[1] * xmm) / 2, 78)
+    xmm = 90.0 / 600
+    ymm = 98.0 / 780
+    rm = ((array[-1] * xmm + array[1] * xmm) / 2, 780*ymm/2)
 
     # 곡선 기울기
-    ra = (array[-1] * xmm - array[1] * xmm) / 156
+    ra = (array[-1] * xmm - array[1] * xmm) / 98
 
     # 원의 중심좌표
-    ocenter = (-130 / ra + rm[0], -52)
+    ocenter = (-102.5 / ra + rm[0], -53.5)
 
     # 조향 기울기
-    vl = 52 / (300 * xmm + 130 / ra - rm[0])
+    vl = 53.5 / (300 * xmm + 102.5 / ra - rm[0])
 
     if(vl > 0):
         vl = -math.atan(vl) * 180 / math.pi
@@ -187,6 +189,7 @@ def cal_exactly(array):
         vl = math.atan(vl) * 180 / math.pi
 
     return vl
+
 
 
 def slide_window_search(binary_warped, right_current):
@@ -212,9 +215,9 @@ def slide_window_search(binary_warped, right_current):
     color = [0, 255, 0]
     thickness = 2
     mid = [0] * nwindows
-    dot_save = [0] * (nwindows-5)  # 차선의 값을 저장해둠.
+    dot_save = [0] * (nwindows - 5)  # 차선의 값을 저장해둠.
 
-    for w in range(nwindows-5):
+    for w in range(nwindows - 5):
         win_y_low = binary_warped.shape[0] - (w + 1) * window_height  # window 윗부분
         win_y_high = binary_warped.shape[0] - w * window_height  # window 아랫 부분
         # win_xleft_low = left_current - margin  # 왼쪽 window 왼쪽 위
@@ -609,7 +612,7 @@ def detect():
     lane_changed = False
     lane_list = ['Normal', '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!']
     current_lane = 'right'
-    mid_standard = 511
+    mid_standard = 544
 
     # Load model
     stride = 32
@@ -730,11 +733,11 @@ def detect():
             mid_custom = np.mean(right_saving)
             # print("차선값:",mid_custom)
             if save_mid[0] is None:
-                save_mid[0] = mid_custom  #초기에 전의 mid_custom값 저장
+                save_mid[0] = mid_custom  # 초기에 전의 mid_custom값 저장
                 save_mid[1] = mid_custom
             else:
-                save_mid[1] = mid_custom  #현재값 save_mid[1]에 저장
-            #print(mid_custom)
+                save_mid[1] = mid_custom  # 현재값 save_mid[1]에 저장
+            # print(mid_custom)
             # mid_custom이 갑자기 많이 바뀌면 우측 차선 -> 좌측 차선이라고 판단.
             # print(mid_custom)
             # print("1: %f" %save_mid[0])
@@ -748,11 +751,11 @@ def detect():
                 # current_lane 값을 바꿔줌
                 if current_lane == 'right':
                     current_lane = 'left'
-                    mid_standard = -70
+                    mid_standard = -39
                 else:
                     current_lane = 'right'
-                    mid_standard = 485
-            print("!!!!!!!!!!!!!!!!!!!!현재 차선:", current_lane)
+                    mid_standard = 544
+            # print("!!!!!!!!!!!!!!!!!!!!현재 차선:", current_lane)
 
             save_mid[0] = save_mid[1]
 
@@ -783,8 +786,6 @@ def detect():
 
             # Hough line detection 후 lines이 발견되면 thresh에 추출된 직선 그리기
 
-
-
             height, width = img.shape[:2]
 
             # hsv이미지로 변환한다.
@@ -813,14 +814,15 @@ def detect():
             total_sum = int(np.sum(h) / h.size)
             result = np.where(h != 0, 1, 0)
             total_one_sum = np.sum(result)
+            data = add_sample(total_sum)
 
             cv2.imshow('i', list1)
             cv2.imshow('roi1', roi)
-            cv2.imshow('roi2', roi2)
-            #cv2.imshow('origin', im0s
+            cv2.imshow('roi2', thresh)
+            # cv2.imshow('origin', im0s
             # cv2.imshow('ddd', sobelx)
             cv2.waitKey(1)
-
+            speed = 100
             pid = PID(0.5, 0.015, 0.05)  # 특정 계수를 가진 PID 컨트롤러 생성
             #
             # divv = 0.5
@@ -864,11 +866,11 @@ def detect():
             # angle = diff + angle
             # angle = cal_exactly(right_saving) * 8 + diff
             # #
-            if abs(cal_exactly(right_saving)) < 3:  #직선구간
-                angle = diff*0.1 + cal_exactly(right_saving) * 0.2
+            if abs(cal_exactly(right_saving)) < 3:  # 직선구간
+                angle = diff * 0.2 + cal_exactly(right_saving) * 0.2
                 print("직선---------------")
-            else:  #곡선 구간 cal_exactly 가중 증가
-                angle = diff*0.1 + cal_exactly(right_saving) * 0.7
+            else:  # 곡선 구간 cal_exactly 가중 증가
+                angle = diff * 0.085 + cal_exactly(right_saving) * 0.4
                 print("곡선~~~~~~~~~~~~~~~~~~~")
             # print("diff: ", diff)
             # print("cal: ", cal_exactly(right_saving))
@@ -879,9 +881,9 @@ def detect():
             # # Here is for the serial
             # print("before angle: ", angle)
             # angle = angle*1.8 + diff
-            print("angle : %f" % angle)
-            if (angle > 16):
-                    angle = 16
+            # print("angle : %f" % angle)
+            if (angle > 17):
+                angle = 17
             elif (angle < -16):
                 angle = -16
             else:
@@ -889,7 +891,7 @@ def detect():
 
             if (angle < 1 and angle > -1):
                 angle = 0
-            a = 100
+            # a = 100
             if lines is not None:
                 for line in lines:
                     # Extract line parameters
@@ -904,23 +906,24 @@ def detect():
                     y2 = int(y0 - 1000 * (a))
 
                     cv2.line(thresh, (x1, y1), (x2, y2), (255, 0, 0), 5)
-            if (a * 180 / math.pi > -5 or a * 180 / math.pi < 5) and total_one_sum > 9000: #stop
-                if len(data) == 2: #start
-                    if abs(data[0] - data[1]) > 30:
-                        angle = angle
-                    else:
-                        angle = angle + 50
-            print(total_sum, total_one_sum)
+            print("a: ",a, "total_one_sum: ", total_one_sum, "total_sum: ", total_sum)
+            # if (a * 180 / math.pi > -5 or a * 180 / math.pi < 5) and total_one_sum > 9000:  # stop
+            #     if len(data) == 2:  # start
+            #         if abs(data[0] - data[1]) > 30:
+            #             angle = angle
+            #             print("go!!!")
+            #         else:
+            #             angle += 300000
+            #             print("stop!!!")
+            # print(total_sum, total_one_sum)
 
-            data = add_sample(total_sum)
+
 
             global serial_
             if serial_:
-                
                 # print("Helllo!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
                 # speed = 50
                 # print(angle)
-
                 send_data(angle)
                 # if ser.in_waiting:
                 #     val = ser.readline().decode()
