@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import math
 
 # 이미지파일을 컬러로 읽어온다.
-cap = cv2.VideoCapture('/Users/jeong-inhyuk/Hyuk/vscode/Team_Macaron/video/traffic.mp4')
+cap = cv2.VideoCapture('/Users/jeong-inhyuk/Hyuk/vscode/Team_Macaron/video/KakaoTalk_Video_2023-07-16-01-08-06.mp4')
 data = []
 
 def color_filter(image):
@@ -98,14 +98,22 @@ while True:
 
     maskr = cv2.add(mask1, mask2)
 
-    img_result = cv2.bitwise_and(img, img, mask = maskr + maskg)
+    img_result = cv2.bitwise_and(hsv, hsv, mask = maskr + maskg)
     img_result = cv2.erode(img_result, None, iterations=5)
     img_result = cv2.dilate(img_result, None, iterations=5)
     roi = img_result[0:150, 100:800]
 
     h, s, v = cv2.split(roi)
     total_sum = int(np.sum(h)/h.size)
-    result = np.where(h != 0, 1, 0)
+    condition1 = np.logical_and(h >= 0, h <= 10)
+    condition2 = np.logical_and(s >= 100, s <= 255)
+    condition3 = np.logical_and(v >= 100, v <= 255)
+
+    condition4 = np.logical_and(h >= 160, h <= 180)
+
+# 결과 배열 생성
+    result = np.where(np.logical_or(np.logical_and(condition1, condition2, condition3),
+                                np.logical_and(condition4, condition2, condition3)), 1, 0)
     total_one_sum = np.sum(result)
     data = add_sample(total_sum)
     a = 100
@@ -126,10 +134,10 @@ while True:
 
             # print(total_one_sum)
     # print(a)
-   
+    
     if (a * 180 / math.pi > -5 and a * 180 / math.pi < 5) and total_one_sum > 9000:  # stop
         if len(data) == 2:  # start
-            if abs(data[0] - data[1]) > 30:
+            if abs(data[0] - data[1]) > 40:
                 
                 print("go!!!")
             else:
