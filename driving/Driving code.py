@@ -151,16 +151,16 @@ def slide_window_search(binary_warped, right_current):
     nonzero = binary_warped.nonzero()  # 선이 있는 부분의 인덱스만 저장
     nonzero_y = np.array(nonzero[0])  # 선이 있는 부분 y의 인덱스 값
     nonzero_x = np.array(nonzero[1])  # 선이 있는 부분 x의 인덱스 값
-    margin = 80
+    margin = 100
     minpix = 50
     left_lane = []
     right_lane = []
     color = [0, 255, 0]
     thickness = 2
     mid = [0] * nwindows
-    dot_save = [0] * (nwindows-4)  # 차선의 값을 저장해둠.
+    dot_save = [0] * (nwindows-3)  # 차선의 값을 저장해둠.
 
-    for w in range(nwindows-4):
+    for w in range(nwindows-3):
         win_y_low = binary_warped.shape[0] - (w + 1) * window_height  # window 윗부분
         win_y_high = binary_warped.shape[0] - w * window_height  # window 아랫 부분
         # win_xleft_low = left_current - margin  # 왼쪽 window 왼쪽 위
@@ -180,9 +180,14 @@ def slide_window_search(binary_warped, right_current):
         #     left_current = np.int_(np.mean(nonzero_x[good_left]))
         if len(good_right) > minpix:
             right_current = np.int_(np.mean(nonzero_x[good_right]))
+        else:
+            w_num = w
+            if w_num > 1:  # 최소한 2개의 데이터가 들어가 있을 때
+                right_current = int(dot_save[w_num - 1] + (dot_save[w_num - 1] - dot_save[w_num - 2]))
+
         # mid[w] = (right_current + left_current)/2
         cv2.rectangle(out_img, (win_xright_low, win_y_low), (win_xright_high, win_y_high), color, thickness)
-        cv2.line(out_img, (right_current, win_y_high), (right_current, win_y_high), [0, 255, 255], 5)
+        # cv2.line(out_img, (right_current, win_y_high), (right_current, win_y_high), [0, 255, 255], 5)
         dot_save[w] = right_current
 
     # left_lane = np.concatenate(left_lane)  # np.concatenate() -> array를 1차원으로 합침
@@ -216,8 +221,8 @@ def slide_window_search(binary_warped, right_current):
     ret = {'right_fitx': rtx, 'ploty': ploty}
 
     # Define conversions in x and y from pixels space to meters
-    ym_per_pix = 19.1 / 720  # centimeters per pixel in y dimension
-    xm_per_pix = 32.5 / 1000  # centimeters per pixel in x dimension
+    ym_per_pix = 98.0 / 780  # centimeters per pixel in y dimension
+    xm_per_pix = 90.0 / 600  # centimeters per pixel in x dimension
     y_eval = np.max(ploty)
     # Fit new polynomials to x,y in world space
     # left_fit_cr = np.polyfit(ploty * ym_per_pix, left_fitx * xm_per_pix, 2)
@@ -232,7 +237,7 @@ def slide_window_search(binary_warped, right_current):
     # print(right_curverad, 'cm')
     right_curverad = 1 / right_curverad  # 곡률
     str__ = "curve : %f" % right_curverad
-    out_img = cv2.putText(out_img, str__, (350, 40), cv2.FONT_HERSHEY_PLAIN, 2, [255, 0, 0], 1, cv2.LINE_AA)  # 반지름 표시
+    out_img = cv2.putText(out_img, str__, (150, 40), cv2.FONT_HERSHEY_PLAIN, 2, [255, 0, 0], 1, cv2.LINE_AA)  # 반지름 표시
 
     line_1 = right_fit[0] * ploty * 2 + right_fit[1]
     # print(-np.mean(line_1))
@@ -553,8 +558,8 @@ def detect():
     save_mid = [None, None]
 
     lane_changed = False
-    lane_list = ['Normal', '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!']
     current_lane = 'right'
+    lane_type = "straight"
     mid_standard = 544
 
     # Load model
@@ -704,7 +709,7 @@ def detect():
 
             # print("hihi %d"%np.mean(right_saving))
             # result, newwarp, color_warp, pts_left_list, pts_right_list, mean_mid, mean_curve = draw_lane_lines(im0s, thresh, minverse, draw_info)
-            show_seg_result(im0s, (ll_seg_mask), is_demo=True) ##############################바꿈
+            #show_seg_result(im0s, (ll_seg_mask), is_demo=True) ##############################바꿈
             # cv2.circle(merge_list, (int(mid), 360), 20, (0, 255, 0), -1)
             # mid = np.mean(mid)
             # print(mid)
@@ -765,15 +770,18 @@ def detect():
             if abs(cal_exactly(right_saving)) < 3:  #직선구간
                 angle = diff*0.2 + cal_exactly(right_saving) * 0.2
                 print("직선---------------")
+                lane_type = 'straight'
             else:  #곡선 구간 cal_exactly 가중 증가
-                angle = diff*0.085 + cal_exactly(right_saving) * 0.4
+                angle = diff*0.082 + cal_exactly(right_saving) * 0.4
                 print("곡선~~~~~~~~~~~~~~~~~~~")
+                lane_type = 'curve'
             # print("diff: ", diff)
             # print("cal: ", cal_exactly(right_saving))
             # print(cal_exactly(right_saving))
-            if angle >8 and angle <12 and current_lane == 'left':
-                angle += 3
-
+            # if angle >6 and angle <12 and current_lane == 'left':
+            #     angle += 4
+            if current_lane =='left' and lane_type =="curve":
+                angle += 7
 
 
             # print("newan :", angle)
