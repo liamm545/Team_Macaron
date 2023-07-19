@@ -5,6 +5,7 @@ int angle;
 int bangle;
 int speed;
 char rr;
+String command = "";
 
 int motor_left_1 = 2;  //왼쪽 뒷바퀴
 int motor_left_2 = 3;
@@ -30,51 +31,50 @@ void setup() {
   pinMode(motor_steer_1, OUTPUT);
   pinMode(motor_steer_2, OUTPUT);
 }
-// 고속주!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-void loop() {
-  val = potentiometer_Read(analogPin); 
-  speed = 100;
-  
-  if (Serial.available()){
-    angle = Serial.parseInt();
-    if(angle >300){
-      motor_hold(motor_right_1, motor_right_2);
-      motor_hold(motor_left_1, motor_left_2);
-      delay(1000);
-    }
-    else{
+// 고속주행코드!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+void executeCommand(String cmd) {
+   val = potentiometer_Read(analogPin); 
     
-    if(angle > 16 || angle < -16){
-      angle = bangle;
-    }else{
-      bangle = angle;
-    }
-    int angle_1 = map(angle, -16, 17, 150, 121);
-    
-    
-
+  speed = 90;
     motor_forward(motor_right_1, motor_right_2, speed);
     motor_backward(motor_left_1, motor_left_2, speed);
-    
-
-    if(val <= angle_1)
+  if (cmd.startsWith("A:")) {
+    cmd.remove(0, 2);
+    cmd.remove(cmd.length() - 1);
+    int angle = cmd.toInt();
+    angle = map(angle, -16, 17, 150, 121);
+    if(val <= angle)
     {
-      motor_forward(motor_steer_1, motor_steer_2, 140);  //좌회전
-      if (val >= angle_1){
+      motor_forward(motor_steer_1, motor_steer_2, 70);  //좌회전
+      if (val >= angle){
         motor_hold(motor_steer_1, motor_steer_2);
       }
     }
-    else if(val >= angle_1)  //
+    else if(val >= angle)  //
     {
-      motor_backward(motor_steer_1, motor_steer_2, 140); //우회전
-      if (val <= angle_1){
+      motor_backward(motor_steer_1, motor_steer_2, 70); //우회전
+      if (val <= angle){
         motor_hold(motor_steer_1, motor_steer_2);
       }    
-    }
-
-    
-    
-    delay(10);
+    }  
+  } else if(cmd.startsWith("M:")) {
+     motor_hold(motor_right_1, motor_right_2);
+     motor_hold(motor_left_1, motor_left_2);
+     delay(100);
   }
+}
+
+void loop() {
+
+  
+  while (Serial.available()){
+
+    char ch = Serial.read();
+    command += ch;
+    if(ch == ';') {
+      executeCommand(command);
+      command = "";
+   
+    }
   }
 }
