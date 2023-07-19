@@ -119,10 +119,15 @@ def send_data(steering_angle):  #######################
     # steering_angle = str(steering_angle)
     # data = "Q" + steering_angle
     # ser.write(data.encode("utf-
+    message = "A:" + str(steering_angle) + ";"
+    ser.write(message.encode())
+    # data = str(steering_angle) + '\n'
+    #
+    # ser.write(data.encode())
 
-    data = str(steering_angle) + '\n'
-
-    ser.write(data.encode())
+def send_motor_hold():
+    message = "M:hold;"
+    ser.write(message.encode())
 
 
 class PID():
@@ -772,7 +777,7 @@ def detect():
 
             blurred_img = cv2.GaussianBlur(warpped_img, (0, 0), 2)
 
-            roi2 = blurred_img[600:720, 250:1150]
+            roi2 = blurred_img[600:700, 250:1150]
 
             w_f_img = color_filter(roi2)
 
@@ -804,15 +809,24 @@ def detect():
             maskg = cv2.inRange(hsv, lower_green, upper_green)
 
             maskr = cv2.add(mask1, mask2)
-
-            img_result = cv2.bitwise_and(im0s, im0s, mask=maskr + maskg)
+            img_bgr = cv2.bitwise_and(im0s, im0s, mask=maskr + maskg)
+            img_result = cv2.bitwise_and(hsv, hsv, mask=maskr + maskg)
             img_result = cv2.erode(img_result, None, iterations=5)
             img_result = cv2.dilate(img_result, None, iterations=5)
             roi = img_result[0:150, 100:800]
-
+            roi_bgr = img_bgr[0:150, 100:800]
+            b, g, r = cv2.split(roi_bgr)
             h, s, v = cv2.split(roi)
-            total_sum = int(np.sum(h) / h.size)
-            result = np.where(h != 0, 1, 0)
+            total_sum = int(np.sum(b) / b.size)
+            condition1 = np.logical_and(h >= 0, h <= 10)
+            condition2 = np.logical_and(s >= 100, s <= 255)
+            condition3 = np.logical_and(v >= 100, v <= 255)
+
+            condition4 = np.logical_and(h >= 160, h <= 180)
+
+            # 결과 배열 생성
+            result = np.where(np.logical_or(np.logical_and(condition1, condition2, condition3),
+                                            np.logical_and(condition4, condition2, condition3)), 1, 0)
             total_one_sum = np.sum(result)
             data = add_sample(total_sum)
 
@@ -891,7 +905,7 @@ def detect():
 
             if (angle < 1 and angle > -1):
                 angle = 0
-            # a = 100
+            a = 100
             if lines is not None:
                 for line in lines:
                     # Extract line parameters
@@ -906,20 +920,24 @@ def detect():
                     y2 = int(y0 - 1000 * (a))
 
                     cv2.line(thresh, (x1, y1), (x2, y2), (255, 0, 0), 5)
+            global serial_
             print("angle: ",a*180/math.pi, "total_one_sum: ", total_one_sum, "total_sum: ", data)
-            if (a * 180 / math.pi > -5 and a * 180 / math.pi < 5) and total_one_sum > 9000:  # stop
-                if len(data) == 2:  # start
-                    if abs(data[0] - data[1]) > 30:
-                        angle = angle
-                        print("go!!!")
-                    else:
-                        angle += 300000
-                        print("stop!!!")
+            if (a * 180 / math.pi > -5 and a * 180 / math.pi < 5) and total_one_sum > 15000:  # stop
+                # angle += 500
+                send_motor_hold()
+                serial_ = 0
+                print("stop!!!")
+            if len(data) == 2:  # start
+                if abs(data[0] - data[1]) > 30:
+                    angle = angle
+                    serial_ = 1
+                    print("go!!!")
+            print("angle: ", angle)
             # print(total_sum, total_one_sum)
 
 
 
-            global serial_
+
             if serial_:
                 # print("Helllo!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
                 # speed = 50
