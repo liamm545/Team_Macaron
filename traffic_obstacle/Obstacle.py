@@ -249,6 +249,8 @@ def detect():
     current_lane = 'right'
     mid_standard = 511
 
+    max_area = 0
+
     # Load model
     stride = 32
     model = torch.jit.load(weights)
@@ -298,13 +300,23 @@ def detect():
 
         # da_seg_mask = driving_area_mask(seg)
         ll_seg_mask = lane_line_mask(ll)
-        # print(ll_seg_mask)
-        # Process detections
-        data = ser.readline().decode()
-        print(data)
-        for i, det in enumerate(pred):  # detections per image
 
-            if data == 'a':
+        for i, det in enumerate(pred):  # detections per image
+            p, s, im0, frame = path, '', im0s, getattr(dataset, 'frame', 0)
+            p = 1  # to Path
+            s += '%gx%g ' % img.shape[2:]  # print string
+            gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
+
+            if len(det):
+                # Rescale boxes from img_size to im0 size
+                det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
+
+                # Write results
+                for *xyxy, conf, cls in reversed(det):
+                    area = plot_one_box(xyxy, im0, line_thickness=3)
+                    max_area = max(max_area, area)
+            if max_area > 150000:
+                print("Hello")
                 pygame.init()
                 screen = pygame.display.set_mode((WIDTH, HEIGHT))
                 screen.fill((0, 0, 0))
@@ -326,7 +338,6 @@ def detect():
 
                 prev_angle = []
                 last_angle = 0
-                print("Received 'a' signal from Arduino!")
                 target_x, target_y = line_points[0]
                 dirct = direction_points[0]
                 dx = target_x - x
@@ -390,14 +401,9 @@ def detect():
                 ser.close()  # 시리얼 포트 닫기
                 pygame.quit()
 
-            p, s, im0, frame = path, '', im0s, getattr(dataset, 'frame', 0)
-            p = 1  # to Path
-            s += '%gx%g ' % img.shape[2:]  # print string
-            gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
-
             # Print time (inference)
             print(f'{s}Done. ({t2 - t1:.3f}s)')
-            send_data(t2 - t1)
+            # send_data(t2 - t1)
 
             source1 = np.float32([[350, 400], [200, 670], [900, 400], [1180, 670]])
             destination1 = np.float32([[0, 0], [0, 780], [600, 0], [600, 780]])
@@ -464,7 +470,7 @@ def detect():
             save_mid[0] = save_mid[1]
 
             cv2.imshow('i', list1)
-            # cv2.imshow('origin', im0s)
+            cv2.imshow('origin', im0s)
             # cv2.imshow('ddd', sobelx)
             cv2.waitKey(1)
 
