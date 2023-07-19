@@ -1,13 +1,8 @@
 import argparse
 from pathlib import Path
-import cv2
-import numpy as np
-import torch
 import math
-import matplotlib as plt
 import time  #pygame library
 import pygame
-import math
 import serial
 from pygame.locals import *
 
@@ -26,8 +21,6 @@ def send_data(steering_angle):  #######################
     # ser.write(data.encode("utf-
     data = str(steering_angle) + '\n'
     ser.write(data.encode())
-
-cap = cv2.VideoCapture(1)
 
 def load_map():
     # 맵 파일을 로드하는 함수
