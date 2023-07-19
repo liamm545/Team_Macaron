@@ -674,7 +674,7 @@ def detect():
             list1, right_cur, slope, right_saving = slide_window_search(sobelx, rightbase)
             # list1, right_cur, slope, right_saving = slide_window_search(Eroded, rightbase)
             mid_custom = np.mean(right_saving)
-            print("차선값:",mid_custom)
+            # print("차선값:",mid_custom)
             if save_mid[0] is None:
                 save_mid[0] = mid_custom  #초기에 전의 mid_custom값 저장
                 save_mid[1] = mid_custom
@@ -694,7 +694,7 @@ def detect():
                 # current_lane 값을 바꿔줌
                 if current_lane == 'right':
                     current_lane = 'left'
-                    mid_standard = -22  #-39 ~
+                    mid_standard = -39  #-39 ~
                 else:
                     current_lane = 'right'
                     mid_standard = 544
@@ -704,7 +704,7 @@ def detect():
 
             # print("hihi %d"%np.mean(right_saving))
             # result, newwarp, color_warp, pts_left_list, pts_right_list, mean_mid, mean_curve = draw_lane_lines(im0s, thresh, minverse, draw_info)
-            # show_seg_result(im0s, (ll_seg_mask), is_demo=True) ##############################바꿈
+            show_seg_result(im0s, (ll_seg_mask), is_demo=True) ##############################바꿈
             # cv2.circle(merge_list, (int(mid), 360), 20, (0, 255, 0), -1)
             # mid = np.mean(mid)
             # print(mid)
@@ -715,7 +715,7 @@ def detect():
 
 
             cv2.imshow('i', list1)
-            #cv2.imshow('origin', im0s
+            # cv2.imshow('origin', im0s)
             # cv2.imshow('ddd', sobelx)
             cv2.waitKey(1)
 
@@ -766,11 +766,15 @@ def detect():
                 angle = diff*0.2 + cal_exactly(right_saving) * 0.2
                 print("직선---------------")
             else:  #곡선 구간 cal_exactly 가중 증가
-                angle = diff*0.07 + cal_exactly(right_saving) * 0.4
+                angle = diff*0.085 + cal_exactly(right_saving) * 0.4
                 print("곡선~~~~~~~~~~~~~~~~~~~")
             # print("diff: ", diff)
             # print("cal: ", cal_exactly(right_saving))
             # print(cal_exactly(right_saving))
+            if angle >8 and angle <12 and current_lane == 'left':
+                angle += 3
+
+
 
             # print("newan :", angle)
             #
@@ -780,8 +784,8 @@ def detect():
             print("angle : %f" % angle)
             global serial_
             if serial_:
-                if (angle > 16):
-                    angle = 16
+                if (angle > 17):
+                    angle = 17
                 elif (angle < -16):
                     angle = -16
                 else:
