@@ -1,7 +1,7 @@
 import argparse
 from pathlib import Path
 import math
-import time  #pygame library
+import time  # pygame library
 import pygame
 import serial
 from pygame.locals import *
@@ -11,6 +11,7 @@ serial_ = 1
 
 WIDTH, HEIGHT = 800, 600
 game_once = 0;
+count = 0
 
 if serial_:  #######################
     ser = serial.Serial('COM3', 9600)
@@ -23,18 +24,16 @@ def send_data2(steering_angle):  #######################
     message = "P:" + str(steering_angle) + ";"
     ser.write(message.encode())
 
-
-
 def load_map():
     # 맵 파일을 로드하는 함수
     line_points = []
     direction_points = []
     try:
-        with open('map_obstacle.txt', 'r') as f:
+        with open('parking.txt', 'r') as f:
             for line in f:
                 x, y = line.strip().split(',')
                 line_points.append((int(x), int(y)))
-        with open('map_obstacle_direct.txt', 'r') as f:
+        with open('parking_direct.txt', 'r') as f:
             for line in f:
                 x = line.strip()
                 direction_points.append((int(x)))
@@ -42,19 +41,9 @@ def load_map():
         print("맵이 없다.")
     return line_points, direction_points
 
-def save_map(line_points, direction_points):
-    # 맵을 파일로 저장하는 함수
-    with open('map_obstacle.txt', 'w') as f:
-        for point in line_points:
-            f.write(f"{point[0]},{point[1]}\n")
-    #맵의 dir을 저장하는 함수
-    with open('map_obstacle_direct.txt', 'w') as f:
-        for point in direction_points:
-            f.write(f"{point}\n")
-
 while True:
-    ultra = ser.readline().decode()
-    if ultra < 1000 and game_once == 0:
+
+    if parking == "P" and game_once == 0:
         game_once = 1
         # pygame.init()
         screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -81,8 +70,11 @@ while True:
         last_angle = 0
 
         angle = 0
+
+
+
         while running:
-            
+
             if len(line_points) > 1:
 
                 target_x, target_y = line_points[0]
@@ -109,7 +101,7 @@ while True:
                         follow_mode = False
                         continue
                     if (direction_points[1] == 0):
-                        send_data(90)
+                        send_data2(90)
                         time.sleep(5)
                         direction_points.pop(1)
 
@@ -138,12 +130,16 @@ while True:
                     angle = angle + 40
                 if (angle <= 16) and (angle >= -16):
                     send_data1(angle)
+                    print(angle)
                 else:
                     angle -= 40
                     send_data2(angle)  # 전송 형식을 실제 환경에 맞게 수정
                 print("현재 진행 각도:", angle)
                 print("\n진행방향: ", dirct)
-            
+
             # pygame.display.flip()
             clock.tick(60)
-
+    parking = 0
+    send_data1(0)
+    parking = ser.readline().decode()
+    print(parking)
