@@ -1,0 +1,92 @@
+<Car_Library.h>
+
+int val; // 수신될 가변 저항 값 저장할 변수
+int angle;
+int bangle;
+int speed;
+char rr;
+
+#define NUM_SENSORS 6 // Define the number of sensors
+
+// 초음파 pin
+int trigPins[NUM_SENSORS] = {50, 48, 46, 44, 34, 32}; //정면, 우측 정면, 우측 옆면, 후면, 좌측 옆면, 좌측 정면
+int echoPins[NUM_SENSORS] = {51, 49, 47, 45 ,35, 33}; //정면, 우측 정면, 우측 옆면, 후면, 좌측 옆면, 좌측 정면
+
+int motor_left_1 = 2; //왼쪽 뒷바퀴
+int motor_left_2 = 3;
+
+int motor_right_1 = 4; //오른쪽 뒷바퀴
+int motor_right_2 = 5;
+
+int motor_steer_1 = 6; // 앞바퀴 조향
+int motor_steer_2 = 7;
+
+int analogPin = A5; //가변 저항
+
+// Define name of the pins
+const char* Strings[NUM_SENSORS] = {"정면", "우측 정면", "우측 옆면", "후면", "좌측 옆면", "좌측 정면"};
+
+long distances[NUM_SENSORS];
+
+void setup() {
+  // put your setup code here, to run once:
+  Serial.begin(9600);
+  Serial.setTimeout(50);
+
+  pinMode(motor_left_1, OUTPUT);
+  pinMode(motor_left_2, OUTPUT);
+  pinMode(motor_right_1, OUTPUT);
+  pinMode(motor_right_2, OUTPUT);
+  pinMode(motor_steer_1, OUTPUT);
+  pinMode(motor_steer_2, OUTPUT);
+}
+
+void loop() {
+  val = potentiometer_Read(analogPin); 
+
+  speed = 150;
+
+  if (Serial.available()){
+    angle = Serial.parseInt();
+
+    if(angle == 90){ //멈추는 조건. 이거는 
+      motor_hold(motor_right_1, motor_right_2);
+      motor_hold(motor_left_1, motor_left_2);
+      delay(3000); //몇 초 멈춰야 하는지.
+    }
+
+    else if(angle >= 26 && angle <= 56) {
+          motor_forward(motor_left_1, motor_left_2, speed);
+          motor_backward(motor_right_1, motor_right_2, speed);
+	  angle = angle - 40;
+    }
+    else{
+          motor_forward(motor_right_1, motor_right_2, speed);
+          motor_backward(motor_left_1, motor_left_2, speed);
+    }
+    
+
+    int angle_1 = map(angle, -16, 16, 153, 131);
+
+    if(val <= angle_1) //여기를 정해진 각도 값으로 해서 조향해야할 듯.
+    {
+      motor_forward(motor_steer_1, motor_steer_2, 80); //좌회전
+      if (val >= angle_1){
+        motor_hold(motor_steer_1, motor_steer_2);
+      }
+    }
+    else if(val >= angle_1)
+    {
+      motor_backward(motor_steer_1, motor_steer_2, 80); //우회전
+      if (val <= angle_1){
+        motor_hold(motor_steer_1, motor_steer_2);
+      }
+    }
+
+    Serial.println(angle);
+    delay(10);
+  }
+  
+
+    
+}
