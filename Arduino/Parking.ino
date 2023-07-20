@@ -6,6 +6,7 @@ int bangle;
 int speed;
 int del;
 bool parking_signal = false;
+String command = "";
 
 // 초음파 pin
 //int trigPins[NUM_SENSORS] = {50, 48, 46, 44, 34, 32};  //정면, 우측 정면, 우측 옆면, 후면, 좌측 옆면, 좌측 정면
@@ -46,60 +47,74 @@ void setup() {
 
 }
 
-void motor_straight(speed) {
-  motor_forward(motor_right_1, motor_right_2, speed);
-  motor_backward(motor_left_1, motor_left_2, speed);
-}
 
-void executeCommand(String cmd, distances) {
-   val = potentiometer_Read(analogPin); 
-    
+void executeCommand(String cmd) {
+  val = potentiometer_Read(analogPin); 
+  distances = ultrasonic_distance(trigPins, echoPins);
   speed = 80;
   if (cmd.startsWith("A:")) {
     motor_forward(motor_right_1, motor_right_2, speed);
     motor_backward(motor_left_1, motor_left_2, speed);
+    
     cmd.remove(0, 2);
     cmd.remove(cmd.length() - 1);
     int angle = cmd.toInt();
-    println("A")
+    
+    Serial.println("A");
+    
     if (distances <= 500 && parking_signal == false){
     Serial.println("P");  // 파이썬으로 주차 시작 신호인 'P' 신호를 보냄
-    motor_hold(motor_steer_1, motor_steer_2);
+    motor_hold(motor_right_1, motor_right_2);
+    motor_hold(motor_left_1, motor_left_2);
     parking_signal = true;  // Update the flag
   }
     angle = map(angle, -16, 16, 150, 121);
+    
     if(val <= angle)
     {
       motor_forward(motor_steer_1, motor_steer_2, 140);  //좌회전
+      
       if (val >= angle){
         motor_hold(motor_steer_1, motor_steer_2);
       }
     }
+    
     else if(val >= angle)  //
     {
       motor_backward(motor_steer_1, motor_steer_2, 140); //우회전
+      
       if (val <= angle){
         motor_hold(motor_steer_1, motor_steer_2);
       }    
     }  
   } 
+  
   else if(cmd.startsWith("P:")) {
       motor_forward(motor_left_1, motor_left_2, speed);
       motor_backward(motor_right_1, motor_right_2, speed);
       cmd.remove(0, 2);
       cmd.remove(cmd.length() - 1);
       int angle = cmd.toInt();
+      
+      if (angle == 90) {
+        motor_hold(motor_right_1, motor_right_2);
+        motor_hold(motor_left_1, motor_left_2);
+      }
       angle = map(angle, -16, 16, 150, 121);
+      
       if(val <= angle)
       {
         motor_forward(motor_steer_1, motor_steer_2, 140);  //좌회전
+        
         if (val >= angle){
           motor_hold(motor_steer_1, motor_steer_2);
         }
       }
+      
       else if(val >= angle)  //
       {
         motor_backward(motor_steer_1, motor_steer_2, 140); //우회전
+        
         if (val <= angle){
           motor_hold(motor_steer_1, motor_steer_2);
         }    
@@ -107,17 +122,13 @@ void executeCommand(String cmd, distances) {
   }
 }
 void loop() {
-  val = potentiometer_Read(analogPin); 
-  
-  distances = ultrasonic_distance(trigPins, echoPins);
   while (Serial.available()){
 
     char ch = Serial.read();
     command += ch;
     if(ch == ';') {
-      executeCommand(command, distances);
+      executeCommand(command);
       command = "";
-   
     }
   }
 }
