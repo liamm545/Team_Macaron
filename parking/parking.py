@@ -15,12 +15,15 @@ game_once = 0;
 if serial_:  #######################
     ser = serial.Serial('COM3', 9600)
 
-def send_data(steering_angle):  #######################
-    # steering_angle = str(steering_angle)
-    # data = "Q" + steering_angle
-    # ser.write(data.encode("utf-
-    data = str(steering_angle) + '\n'
-    ser.write(data.encode())
+def send_data1(steering_angle):  #######################
+    message = "A:" + str(steering_angle) + ";"
+    ser.write(message.encode())
+
+def send_data2(steering_angle):  #######################
+    message = "P:" + str(steering_angle) + ";"
+    ser.write(message.encode())
+
+
 
 def load_map():
     # 맵 파일을 로드하는 함수
@@ -133,7 +136,11 @@ while True:
                     angle = 0
                 if (direction_points[1] == -1):
                     angle = angle + 40
-                send_data(angle)  # 전송 형식을 실제 환경에 맞게 수정
+                if (angle <= 16) and (angle >= -16):
+                    send_data1(angle)
+                else:
+                    angle -= 40
+                    send_data2(angle)  # 전송 형식을 실제 환경에 맞게 수정
                 print("현재 진행 각도:", angle)
                 print("\n진행방향: ", dirct)
             

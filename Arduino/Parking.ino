@@ -50,58 +50,74 @@ void motor_straight(speed) {
   motor_forward(motor_right_1, motor_right_2, speed);
   motor_backward(motor_left_1, motor_left_2, speed);
 }
-void loop() {
-  val = potentiometer_Read(analogPin); 
-  
-  speed = 1;
-  motor_straight(speed);
-  
-  distances = ultrasonic_distance(trigPins, echoPins);
-  
-  if (Serial.available()){
 
-    if (distances <= "Tunning"){
+void executeCommand(String cmd, distances) {
+   val = potentiometer_Read(analogPin); 
+    
+  speed = 80;
+  if (cmd.startsWith("A:")) {
+    motor_forward(motor_right_1, motor_right_2, speed);
+    motor_backward(motor_left_1, motor_left_2, speed);
+    cmd.remove(0, 2);
+    cmd.remove(cmd.length() - 1);
+    int angle = cmd.toInt();
+    println("A")
+    if (distances <= 500 && parking_signal == false){
     Serial.println("P");  // 파이썬으로 주차 시작 신호인 'P' 신호를 보냄
     motor_hold(motor_steer_1, motor_steer_2);
     parking_signal = true;  // Update the flag
   }
-  
-    del = Serial.parseInt();
-    angle = Serial.parseInt();
-
-    int angle_1 = map(angle, -17, 16, 151, 120);
-    
-    if(speed == 0){  //멈추는 조건. 이거는 
-      motor_hold();
-      delay(300);  //몇 초 멈춰야 하는지.
-    }
-
-    // 파이게임
-
-    if(angle >= 24 && angle <= 56){   // 후진
-      motor_forward(motor_left_1, motor_left_2, speed);
-      motor_backward(motor_right_1, motor_right_2, speed);
-    }
-    
-    else{   //직진 -> 평소에 쓸 친구
-       motor_straight(speed);
-    }
-
-    if(val <= angle_1)   //일반 주행일 때
+    angle = map(angle, -16, 16, 150, 121);
+    if(val <= angle)
     {
-      motor_forward(motor_steer_1, motor_steer_2, 70);  //좌회전
-      if (val >= angle_1){
+      motor_forward(motor_steer_1, motor_steer_2, 140);  //좌회전
+      if (val >= angle){
         motor_hold(motor_steer_1, motor_steer_2);
       }
     }
-    else if(val >= angle_1)  //
+    else if(val >= angle)  //
     {
-      motor_backward(motor_steer_1, motor_steer_2, 70); //우회전
-      if (val <= angle_1){
+      motor_backward(motor_steer_1, motor_steer_2, 140); //우회전
+      if (val <= angle){
         motor_hold(motor_steer_1, motor_steer_2);
       }    
     }  
-    
-    delay(10);
+  } 
+  else if(cmd.startsWith("P:")) {
+      motor_forward(motor_left_1, motor_left_2, speed);
+      motor_backward(motor_right_1, motor_right_2, speed);
+      cmd.remove(0, 2);
+      cmd.remove(cmd.length() - 1);
+      int angle = cmd.toInt();
+      angle = map(angle, -16, 16, 150, 121);
+      if(val <= angle)
+      {
+        motor_forward(motor_steer_1, motor_steer_2, 140);  //좌회전
+        if (val >= angle){
+          motor_hold(motor_steer_1, motor_steer_2);
+        }
+      }
+      else if(val >= angle)  //
+      {
+        motor_backward(motor_steer_1, motor_steer_2, 140); //우회전
+        if (val <= angle){
+          motor_hold(motor_steer_1, motor_steer_2);
+        }    
+      }  
+  }
+}
+void loop() {
+  val = potentiometer_Read(analogPin); 
+  
+  distances = ultrasonic_distance(trigPins, echoPins);
+  while (Serial.available()){
+
+    char ch = Serial.read();
+    command += ch;
+    if(ch == ';') {
+      executeCommand(command, distances);
+      command = "";
+   
+    }
   }
 }
